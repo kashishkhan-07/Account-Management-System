@@ -9,6 +9,10 @@ import { errorHandler } from "./middleware/errorHandler.js";
 // Import Routes
 import authRoutes from "./routes/authRoutes.js";
 import accountRoutes from "./routes/accountRoutes.js";
+import transactionRoutes from "./routes/transactionRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+
+
 
 const app = express();
 
@@ -26,6 +30,8 @@ app.get("/health", (req, res) => {
 // Mount Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/account", accountRoutes);
+app.use("/api/transactions", transactionRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Global Error Handler
 app.use(errorHandler);
