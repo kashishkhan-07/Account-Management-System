@@ -6,8 +6,9 @@ import connectDB from "./config/db.js";
 import { apiRateLimiter } from "./middleware/rateLimiter.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
-// Import Auth Routes (Phases 1-3)
+// Import Routes
 import authRoutes from "./routes/authRoutes.js";
+import accountRoutes from "./routes/accountRoutes.js";
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.get("/health", (req, res) => {
 
 // Mount Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/account", accountRoutes);
 
 // Global Error Handler
 app.use(errorHandler);
