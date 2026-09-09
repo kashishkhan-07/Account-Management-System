@@ -8,6 +8,11 @@ const accountSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+      accountHolderName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     accountNumber: {
       type: String,
       required: true,
