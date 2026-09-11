@@ -5,10 +5,12 @@ import { adminOnly } from "../middleware/admin.js";
 
 const router = express.Router();
 
-// Apply protect & adminOnly middleware to ALL admin endpoints
 router.use(protect, adminOnly);
 
 router.get("/users", getAllUsersWithBalances);
+
+// Support both PATCH & PUT for CORS compatibility
 router.patch("/users/:userId/status", updateUserStatus);
+router.put("/users/:userId/status", updateUserStatus);
 
 export default router;

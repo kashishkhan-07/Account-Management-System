@@ -7,36 +7,40 @@ import {
   verifyRefreshToken,
 } from "../utils/tokenService.js";
 
-// @desc    Register user & auto-generate bank account
+// @desc    Register user & auto-generate bank account with Account Type & DOB
 // @route   POST /api/auth/register
 export const register = async (req, res, next) => {
   try {
-    const { fullName, email, password, role } = req.body;
+    const { fullName, email, password, role, accountType, dob } = req.body;
 
     if (!fullName || !email || !password) {
       return res.status(400).json({ success: false, message: "All fields are required" });
     }
 
-    const existingUser = await User.findOne({ email });
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(400).json({ success: false, message: "Email is already registered" });
     }
 
-    // 1. Create User Document
+    // 1. Create User Document with DOB & Role
     const user = new User({
       fullName,
-      email,
+      email: normalizedEmail,
       password,
       role: role === "admin" ? "admin" : "user",
+      dob: dob ? new Date(dob) : null,
     });
 
-    // 2. Auto-generate Unique 10-Digit Account Number & Create Linked Account
+    // 2. Auto-generate Unique 10-Digit Account Number & Create Linked Account with Account Type
     const accountNumber = await generateUniqueAccountNumber();
     const account = new Account({
       userId: user._id,
-       accountHolderName: user.fullName,
+      accountHolderName: user.fullName,
       accountNumber,
       balance: 0.0,
+      accountType: accountType || "Savings Account",
     });
 
     await user.save();
@@ -60,7 +64,9 @@ export const register = async (req, res, next) => {
         fullName: user.fullName,
         email: user.email,
         role: user.role,
+        dob: user.dob,
         accountNumber: account.accountNumber,
+        accountType: account.accountType,
       },
     });
   } catch (error) {
@@ -78,13 +84,37 @@ export const login = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Email and password are required" });
     }
 
-    const user = await User.findOne({ email });
-    if (!user || !(await user.comparePassword(password))) {
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // 1. Explicitly load password field
+    const user = await User.findOne({ email: normalizedEmail }).select('+password');
+
+    if (!user) {
       return res.status(401).json({ success: false, message: "Invalid email or password" });
     }
 
-    if (!user.isActive) {
-      return res.status(403).json({ success: false, message: "Account is deactivated. Contact admin." });
+    // 2. Compare Password (Bcrypt + Plain text fallback)
+    let isPasswordValid = false;
+    if (typeof user.comparePassword === 'function') {
+      try {
+        isPasswordValid = await user.comparePassword(password);
+      } catch (err) {
+        isPasswordValid = false;
+      }
+    }
+
+    // Fallback if password in DB was entered manually as plain text
+    if (!isPasswordValid && user.password === password) {
+      isPasswordValid = true;
+    }
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ success: false, message: "Invalid email or password" });
+    }
+
+    // 3. Support both 'isFrozen' and 'isActive' DB fields
+    if (user.isFrozen === true || user.isActive === false) {
+      return res.status(403).json({ success: false, message: "Account is frozen or deactivated. Contact admin." });
     }
 
     const account = await Account.findOne({ userId: user._id });
@@ -102,10 +132,12 @@ export const login = async (req, res, next) => {
       tokens: { accessToken, refreshToken },
       user: {
         id: user._id,
-        fullName: user.fullName,
+        fullName: user.fullName || user.name,
         email: user.email,
         role: user.role,
+        dob: user.dob,
         accountNumber: account ? account.accountNumber : null,
+        accountType: account ? account.accountType : "Savings Account",
       },
     });
   } catch (error) {
@@ -134,7 +166,6 @@ export const refreshToken = async (req, res, next) => {
       return res.status(403).json({ success: false, message: "Account is deactivated" });
     }
 
-    // Token rotation: Issue new access token and refresh token
     const payload = { id: user._id, role: user.role };
     const newAccessToken = generateAccessToken(payload);
     const newRefreshToken = generateRefreshToken(payload);
@@ -164,7 +195,6 @@ export const logout = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Refresh token is required" });
     }
 
-    // Database me active refresh token search karein
     const user = await User.findOne({ refreshToken });
 
     if (!user) {
@@ -174,13 +204,38 @@ export const logout = async (req, res, next) => {
       });
     }
 
-    // Active refresh token ko remove karein (Logout)
     user.refreshToken = null;
     await user.save();
 
     res.status(200).json({
       success: true,
       message: "Logged out successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get Current Logged in User Profile
+// @route   GET /api/auth/me
+export const getMe = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    const account = await Account.findOne({ userId: user._id });
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        fullName: user.fullName || user.name,
+        email: user.email,
+        role: user.role,
+        dob: user.dob,
+        accountNumber: account ? account.accountNumber : null,
+        accountType: account ? account.accountType : "Savings Account",
+      },
     });
   } catch (error) {
     next(error);

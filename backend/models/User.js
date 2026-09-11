@@ -26,6 +26,11 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    // NEW: Date of Birth Field
+    dob: {
+      type: Date,
+      default: null,
+    },
     isActive: {
       type: Boolean,
       default: true,
@@ -38,7 +43,7 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Hash password automatically before saving (No 'next' parameter in async hook)
+// Hash password automatically before saving
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
   const salt = await bcrypt.genSalt(10);

@@ -8,7 +8,7 @@ const accountSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-      accountHolderName: {
+    accountHolderName: {
       type: String,
       required: true,
       trim: true,
@@ -25,9 +25,14 @@ const accountSchema = new mongoose.Schema(
       default: 0.0,
       min: [0, "Balance cannot be negative"],
     },
+    // NEW: Account Type Field
+    accountType: {
+      type: String,
+      default: "Savings Account",
+    },
     currency: {
       type: String,
-      default: "USD",
+      default: "INR",
     },
   },
   { timestamps: true }
