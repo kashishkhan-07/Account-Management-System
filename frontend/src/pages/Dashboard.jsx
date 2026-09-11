@@ -51,6 +51,8 @@ export default function Dashboard() {
   const [page, setPage] = useState(1);
   const limit = 6;
 
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? "/api" : "http://localhost:5000/api");
+
   // Profile Form State
   const [profileForm, setProfileForm] = useState({
     fullName: user?.fullName || user?.name || "",

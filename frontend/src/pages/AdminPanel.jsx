@@ -44,7 +44,8 @@ export default function AdminPanel() {
       setToast({ show: false, message: "", type: "success" });
     }, 3500);
   };
-
+ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? "/api" : "http://localhost:5000/api");
+ 
   const fetchAdminData = async () => {
     setLoading(true);
     setError("");

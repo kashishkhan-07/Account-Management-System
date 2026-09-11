@@ -56,6 +56,7 @@ export const AuthProvider = ({ children }) => {
     return finalUser;
   };
 
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? "/api" : "http://localhost:5000/api");
   // =========================================================================
   // FIX: Flexible Register Function supporting Object Payload & Separate Arguments
   // =========================================================================
