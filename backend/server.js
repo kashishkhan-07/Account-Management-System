@@ -17,12 +17,15 @@ connectDB();
 
 const app = express();
 
-// Explicit CORS origin configuration for credentials
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "*",
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-}));
+// Dynamically reflects incoming origin so withCredentials works in both localhost & production
+app.use(
+  cors({
+    origin: (origin, callback) => callback(null, origin || true),
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  })
+);
 
 app.use(express.json());
 app.use(cookieParser());

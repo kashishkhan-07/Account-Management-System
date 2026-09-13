@@ -22,7 +22,6 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-  Save,
   Check
 } from "lucide-react";
 
@@ -885,17 +884,16 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <form onSubmit={handleProfileUpdate} className="space-y-4 text-xs">
+                <form className="space-y-4 text-xs">
                   <div>
                     <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
                       Full Name
                     </label>
                     <input
                       type="text"
-                      required
+                      readOnly
                       value={profileForm.fullName}
-                      onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
-                      className={`w-full font-semibold rounded-xl px-4 py-2.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none ${
+                      className={`w-full font-semibold rounded-xl px-4 py-2.5 ${
                         isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
                       }`}
                     />
@@ -907,10 +905,9 @@ export default function Dashboard() {
                     </label>
                     <input
                       type="email"
-                      required
+                      readOnly
                       value={profileForm.email}
-                      onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                      className={`w-full font-semibold rounded-xl px-4 py-2.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none ${
+                      className={`w-full font-semibold rounded-xl px-4 py-2.5 ${
                         isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
                       }`}
                     />
@@ -924,7 +921,7 @@ export default function Dashboard() {
                       <input
                         type="text"
                         disabled
-                        value={user?.dob ? new Date(user.dob).toLocaleDateString() : "N/A"}
+                        value={user?.dob ? new Date(user.dob).toLocaleDateString() : "1/1/2000"}
                         className={`w-full font-semibold rounded-xl px-4 py-2.5 cursor-not-allowed ${
                           isDarkMode ? "bg-slate-800/40 border-slate-700 text-slate-400" : "bg-slate-100 border-slate-200 text-slate-500"
                         }`}
@@ -938,22 +935,13 @@ export default function Dashboard() {
                       <input
                         type="text"
                         disabled
-                        value={user?.role || "user"}
+                        value={user?.role || "USER"}
                         className={`w-full font-semibold uppercase rounded-xl px-4 py-2.5 cursor-not-allowed ${
                           isDarkMode ? "bg-slate-800/40 border-slate-700 text-slate-400" : "bg-slate-100 border-slate-200 text-slate-500"
                         }`}
                       />
                     </div>
                   </div>
-
-                  <button
-                    type="submit"
-                    disabled={profileSaving}
-                    className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-md transition cursor-pointer disabled:opacity-50 mt-2"
-                  >
-                    <Save className="w-4 h-4" />
-                    <span>{profileSaving ? "Saving..." : "Save Profile Changes"}</span>
-                  </button>
                 </form>
               </div>
             </div>
