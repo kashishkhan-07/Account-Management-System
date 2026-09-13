@@ -222,8 +222,8 @@ export default function Dashboard() {
     .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
   const grandTotal = totalInflow + totalOutflow;
-  const inflowPercent = grandTotal > 0 ? Math.round((totalInflow / grandTotal) * 100) : 75;
-  const outflowPercent = 100 - inflowPercent;
+  const inflowPercent = grandTotal > 0 ? Math.round((totalInflow / grandTotal) * 100) : 0;
+  const outflowPercent = grandTotal > 0 ? Math.round((totalOutflow / grandTotal) * 100) : 0;
 
   const todayDateStr = new Date().toLocaleDateString("en-US", {
     weekday: "short",
