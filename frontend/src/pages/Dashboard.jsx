@@ -9,6 +9,7 @@ import {
   User as UserIcon,
   LogOut,
   Moon,
+  Sun,
   ArrowDownLeft,
   ArrowUpRight,
   Send,
@@ -28,6 +29,25 @@ import {
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  // --- Dark / Light Theme State ---
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return localStorage.getItem("theme") === "dark";
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [isDarkMode]);
+
+  const toggleTheme = () => {
+    setIsDarkMode((prev) => !prev);
+  };
 
   const [activeTab, setActiveTab] = useState("dashboard"); // 'dashboard' | 'my-account' | 'transactions' | 'profile'
   const [accountData, setAccountData] = useState(null);
@@ -213,7 +233,7 @@ export default function Dashboard() {
     year: "numeric",
   });
 
-  const userName = user?.fullName || user?.name || "Tom";
+  const userName = user?.fullName || user?.name || "Vani Verma";
   const userInitial = userName.charAt(0).toUpperCase();
 
   // Filtering & Pagination for Transactions Tab
@@ -233,7 +253,9 @@ export default function Dashboard() {
   const paginatedTransactions = filteredTransactions.slice((page - 1) * limit, page * limit);
 
   return (
-    <div className="min-h-screen bg-[#f4f6fc] flex font-sans antialiased text-slate-800">
+    <div className={`min-h-screen flex font-sans antialiased transition-colors duration-300 ${
+      isDarkMode ? "bg-[#0b132b] text-slate-100" : "bg-[#f4f6fc] text-slate-800"
+    }`}>
 
       {/* Toast Notification */}
       {toast.show && (
@@ -245,7 +267,7 @@ export default function Dashboard() {
       )}
 
       {/* Left Sidebar Navigation */}
-      <aside className="w-64 bg-[#0a1427] text-slate-300 flex flex-col justify-between p-6 shrink-0 min-h-screen sticky top-0 h-screen">
+      <aside className="w-64 bg-[#0a1427] text-slate-300 flex flex-col justify-between p-6 shrink-0 min-h-screen sticky top-0 h-screen border-r border-slate-800">
         <div className="space-y-8">
           {/* Logo Header */}
           <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab("dashboard")}>
@@ -324,26 +346,39 @@ export default function Dashboard() {
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Top Bar */}
-        <header className="bg-white border-b border-slate-200/80 px-8 py-4 flex items-center justify-between sticky top-0 z-30">
-          <h1 className="text-lg font-bold text-slate-900 capitalize">
+        <header className={`px-8 py-4 flex items-center justify-between sticky top-0 z-30 border-b transition-colors ${
+          isDarkMode ? "bg-[#0f172a] border-slate-800 text-white" : "bg-white border-slate-200/80 text-slate-900"
+        }`}>
+          <h1 className="text-lg font-bold capitalize">
             {activeTab.replace("-", " ")}
           </h1>
 
           <div className="flex items-center space-x-5">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
+            <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${
+              isDarkMode ? "bg-slate-800 text-slate-300 border-slate-700" : "bg-slate-100 text-slate-500 border-slate-200"
+            }`}>
               {todayDateStr}
             </span>
 
-            <button className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition cursor-pointer">
-              <Moon className="w-4 h-4" />
+            {/* --- FUNCTIONAL THEME TOGGLE BUTTON --- */}
+            <button
+              onClick={toggleTheme}
+              className={`p-2 rounded-full transition cursor-pointer ${
+                isDarkMode ? "text-amber-400 hover:bg-slate-800" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              }`}
+              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
 
-            <div className="flex items-center space-x-2.5 pl-2 border-l border-slate-200">
+            <div className={`flex items-center space-x-2.5 pl-2 border-l ${
+              isDarkMode ? "border-slate-800" : "border-slate-200"
+            }`}>
               <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center shadow-md">
                 {userInitial}
               </div>
               <div className="flex flex-col text-left">
-                <span className="text-xs font-bold text-slate-900">{userName}</span>
+                <span className="text-xs font-bold">{userName}</span>
                 <span className="text-[10px] text-slate-400 font-semibold uppercase">{user?.role || "User"}</span>
               </div>
             </div>
@@ -358,7 +393,9 @@ export default function Dashboard() {
             <>
               {/* Greeting Banner */}
               <div>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                <h2 className={`text-2xl sm:text-3xl font-black tracking-tight ${
+                  isDarkMode ? "text-white" : "text-slate-900"
+                }`}>
                   Good Afternoon, {userName}!
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">
@@ -369,8 +406,12 @@ export default function Dashboard() {
               {/* Row 1: Debit Card & Quick Action Buttons */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
 
-                {/* Blue Gradient Debit Card */}
-                <div className="lg:col-span-7 bg-gradient-to-r from-[#2952ee] via-[#3363ff] to-[#5b3eff] rounded-3xl p-7 text-white shadow-xl flex flex-col justify-between relative overflow-hidden min-h-[220px]">
+                {/* --- EXACT BLUE-PURPLE GRADIENT DEBIT CARD (MATCHING PICTURE 1-TO-1) --- */}
+                <div className="lg:col-span-7 bg-gradient-to-br from-[#2952ee] via-[#385fff] to-[#6d30ed] rounded-3xl p-7 text-white shadow-xl flex flex-col justify-between relative overflow-hidden min-h-[220px]">
+
+                  {/* Glossy Diagonal Light Band Across Card */}
+                  <div className="absolute top-0 right-1/4 w-32 h-[300px] bg-gradient-to-b from-white/20 via-white/10 to-transparent transform rotate-[30deg] pointer-events-none" />
+
                   <div className="flex items-center justify-between relative z-10">
                     <div className="flex items-center space-x-2.5">
                       <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center">
@@ -412,35 +453,43 @@ export default function Dashboard() {
                 </div>
 
                 {/* Quick Action Buttons */}
-                <div className="lg:col-span-5 bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm flex items-center justify-around">
+                <div className={`lg:col-span-5 rounded-3xl p-6 border shadow-sm flex items-center justify-around ${
+                  isDarkMode ? "bg-[#131e3a] border-slate-800" : "bg-white border-slate-200/80"
+                }`}>
                   <button
                     onClick={() => { setModalType("deposit"); setModalError(""); }}
                     className="flex flex-col items-center justify-center space-y-2 cursor-pointer group"
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm ${
+                      isDarkMode ? "bg-emerald-950/60 text-emerald-400" : "bg-emerald-50 text-emerald-600"
+                    }`}>
                       <ArrowDownLeft className="w-6 h-6" />
                     </div>
-                    <span className="text-xs font-extrabold text-slate-800">Deposit</span>
+                    <span className={`text-xs font-extrabold ${isDarkMode ? "text-white" : "text-slate-800"}`}>Deposit</span>
                   </button>
 
                   <button
                     onClick={() => { setModalType("withdraw"); setModalError(""); }}
                     className="flex flex-col items-center justify-center space-y-2 cursor-pointer group"
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm ${
+                      isDarkMode ? "bg-rose-950/60 text-rose-400" : "bg-rose-50 text-rose-600"
+                    }`}>
                       <ArrowUpRight className="w-6 h-6" />
                     </div>
-                    <span className="text-xs font-extrabold text-slate-800">Withdraw</span>
+                    <span className={`text-xs font-extrabold ${isDarkMode ? "text-white" : "text-slate-800"}`}>Withdraw</span>
                   </button>
 
                   <button
                     onClick={() => { setModalType("transfer"); setModalError(""); }}
                     className="flex flex-col items-center justify-center space-y-2 cursor-pointer group"
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm ${
+                      isDarkMode ? "bg-purple-950/60 text-purple-400" : "bg-purple-50 text-purple-600"
+                    }`}>
                       <Send className="w-5 h-5" />
                     </div>
-                    <span className="text-xs font-extrabold text-slate-800">Transfer</span>
+                    <span className={`text-xs font-extrabold ${isDarkMode ? "text-white" : "text-slate-800"}`}>Transfer</span>
                   </button>
                 </div>
               </div>
@@ -449,13 +498,17 @@ export default function Dashboard() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
                 {/* Transaction Ratio Breakdown */}
-                <div className="lg:col-span-5 bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-6">
+                <div className={`lg:col-span-5 rounded-3xl p-6 border shadow-sm space-y-6 ${
+                  isDarkMode ? "bg-[#131e3a] border-slate-800" : "bg-white border-slate-200/80"
+                }`}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-extrabold text-slate-900">Transaction Ratio Breakdown</h3>
+                      <h3 className={`text-sm font-extrabold ${isDarkMode ? "text-white" : "text-slate-900"}`}>Transaction Ratio Breakdown</h3>
                       <p className="text-[11px] text-slate-400 font-semibold mt-0.5">Real-time Inflow vs Outflow Ratio</p>
                     </div>
-                    <span className="text-[11px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-3 py-1 rounded-xl">
+                    <span className={`text-[11px] font-bold px-3 py-1 rounded-xl border ${
+                      isDarkMode ? "text-slate-300 bg-slate-800 border-slate-700" : "text-slate-600 bg-slate-100 border-slate-200"
+                    }`}>
                       Last 30 Days
                     </span>
                   </div>
@@ -481,28 +534,32 @@ export default function Dashboard() {
                         />
                       </svg>
                       <div className="absolute flex flex-col items-center justify-center text-center">
-                        <span className="text-base font-black text-slate-900">{inflowPercent}%</span>
+                        <span className={`text-base font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>{inflowPercent}%</span>
                         <span className="text-[9px] text-slate-400 font-extrabold uppercase">INFLOW RATIO</span>
                       </div>
                     </div>
 
                     <div className="space-y-3 flex-1">
-                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex items-center justify-between">
+                      <div className={`p-3 rounded-2xl border flex items-center justify-between ${
+                        isDarkMode ? "bg-slate-800/60 border-slate-800" : "bg-slate-50 border-slate-100"
+                      }`}>
                         <div>
                           <div className="flex items-center space-x-1.5">
                             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                            <span className="text-xs font-extrabold text-slate-800">Deposits (Inflow)</span>
+                            <span className={`text-xs font-extrabold ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>Deposits (Inflow)</span>
                           </div>
                           <span className="text-[10px] font-bold text-emerald-600 block mt-0.5">{inflowPercent}% of Total Volume</span>
                         </div>
                         <span className="text-xs font-black text-emerald-600">+₹{totalInflow.toLocaleString()}</span>
                       </div>
 
-                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex items-center justify-between">
+                      <div className={`p-3 rounded-2xl border flex items-center justify-between ${
+                        isDarkMode ? "bg-slate-800/60 border-slate-800" : "bg-slate-50 border-slate-100"
+                      }`}>
                         <div>
                           <div className="flex items-center space-x-1.5">
                             <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                            <span className="text-xs font-extrabold text-slate-800">Withdrawals (Outflow)</span>
+                            <span className={`text-xs font-extrabold ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>Withdrawals (Outflow)</span>
                           </div>
                           <span className="text-[10px] font-bold text-rose-600 block mt-0.5">{outflowPercent}% of Total Volume</span>
                         </div>
@@ -513,10 +570,12 @@ export default function Dashboard() {
                 </div>
 
                 {/* Recent Activity Card */}
-                <div className="lg:col-span-7 bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                <div className={`lg:col-span-7 rounded-3xl p-6 border shadow-sm flex flex-col justify-between ${
+                  isDarkMode ? "bg-[#131e3a] border-slate-800" : "bg-white border-slate-200/80"
+                }`}>
                   <div>
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-sm font-extrabold text-slate-900">Recent Activity</h3>
+                      <h3 className={`text-sm font-extrabold ${isDarkMode ? "text-white" : "text-slate-900"}`}>Recent Activity</h3>
                       <button
                         onClick={() => setActiveTab("transactions")}
                         className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
@@ -535,8 +594,10 @@ export default function Dashboard() {
                       </div>
                     ) : (
                       <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs text-slate-600">
-                          <thead className="border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+                        <table className="w-full text-left text-xs">
+                          <thead className={`border-b text-slate-400 font-bold uppercase text-[10px] tracking-wider ${
+                            isDarkMode ? "border-slate-800" : "border-slate-100"
+                          }`}>
                             <tr>
                               <th className="py-2.5 px-3">TYPE</th>
                               <th className="py-2.5 px-3">DESCRIPTION</th>
@@ -544,14 +605,14 @@ export default function Dashboard() {
                               <th className="py-2.5 px-3 text-right">AMOUNT</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100">
+                          <tbody className={`divide-y ${isDarkMode ? "divide-slate-800 text-slate-300" : "divide-slate-100 text-slate-600"}`}>
                             {transactions.slice(0, 4).map((t) => {
                               const isCredit =
                                 t.type === "deposit" ||
                                 (t.type === "transfer" && t.receiverAccount === accountNo);
 
                               return (
-                                <tr key={t.transactionId || t._id} className="hover:bg-slate-50/80 transition">
+                                <tr key={t.transactionId || t._id} className={isDarkMode ? "hover:bg-slate-800/40" : "hover:bg-slate-50/80"}>
                                   <td className="py-3 px-3">
                                     <span
                                       className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase ${
@@ -563,7 +624,7 @@ export default function Dashboard() {
                                       {t.type}
                                     </span>
                                   </td>
-                                  <td className="py-3 px-3 font-bold text-slate-800">
+                                  <td className={`py-3 px-3 font-bold ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
                                     {t.description || `${t.type} operation`}
                                   </td>
                                   <td className="py-3 px-3 text-slate-400 font-medium">
@@ -593,19 +654,21 @@ export default function Dashboard() {
           {activeTab === "my-account" && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">My Bank Account Details</h2>
+                <h2 className={`text-2xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>My Bank Account Details</h2>
                 <p className="text-xs text-slate-500 mt-1 font-medium">Comprehensive overview of your active bank account.</p>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
-                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div className={`lg:col-span-2 rounded-3xl p-6 border shadow-sm space-y-6 ${
+                  isDarkMode ? "bg-[#131e3a] border-slate-800" : "bg-white border-slate-200"
+                }`}>
+                  <div className={`flex items-center justify-between pb-4 border-b ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
                         <Wallet className="w-5 h-5" />
                       </div>
                       <div>
-                        <h3 className="font-extrabold text-slate-900 text-base">{accountData?.accountType || "Savings Account"}</h3>
+                        <h3 className={`font-extrabold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>{accountData?.accountType || "Savings Account"}</h3>
                         <span className="text-xs text-slate-400 font-semibold">Primary Banking Account</span>
                       </div>
                     </div>
@@ -613,52 +676,54 @@ export default function Dashboard() {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
-                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-1">
+                    <div className={`p-4 rounded-2xl border space-y-1 ${isDarkMode ? "bg-slate-800/60 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ACCOUNT NUMBER</span>
                       <div className="flex items-center justify-between">
-                        <span className="font-mono font-bold text-slate-900 text-sm">{accountNo || "N/A"}</span>
+                        <span className={`font-mono font-bold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>{accountNo || "N/A"}</span>
                         <button onClick={copyAccountNumber} className="text-blue-600 hover:text-blue-700 cursor-pointer p-1">
                           {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                         </button>
                       </div>
                     </div>
 
-                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-1">
+                    <div className={`p-4 rounded-2xl border space-y-1 ${isDarkMode ? "bg-slate-800/60 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">AVAILABLE BALANCE</span>
-                      <div className="font-extrabold text-slate-900 text-sm">₹{Number(balance).toLocaleString()}</div>
+                      <div className={`font-extrabold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>₹{Number(balance).toLocaleString()}</div>
                     </div>
 
-                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-1">
+                    <div className={`p-4 rounded-2xl border space-y-1 ${isDarkMode ? "bg-slate-800/60 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">CURRENCY</span>
-                      <div className="font-extrabold text-slate-900 text-sm">INR (₹) - Indian Rupee</div>
+                      <div className={`font-extrabold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>INR (₹) - Indian Rupee</div>
                     </div>
 
-                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-1">
+                    <div className={`p-4 rounded-2xl border space-y-1 ${isDarkMode ? "bg-slate-800/60 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">CARD HOLDER NAME</span>
-                      <div className="font-extrabold text-slate-900 text-sm">{userName}</div>
+                      <div className={`font-extrabold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>{userName}</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4 flex flex-col justify-between">
+                <div className={`rounded-3xl p-6 border shadow-sm space-y-4 flex flex-col justify-between ${
+                  isDarkMode ? "bg-[#131e3a] border-slate-800" : "bg-white border-slate-200"
+                }`}>
                   <div className="space-y-3">
                     <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
                       <ShieldCheck className="w-5 h-5" />
                     </div>
-                    <h3 className="font-extrabold text-slate-900 text-sm">Bank-grade Security</h3>
+                    <h3 className={`font-extrabold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Bank-grade Security</h3>
                     <p className="text-xs text-slate-500 leading-relaxed">
                       Your account is protected by 256-bit SSL encryption and tokenized authentication.
                     </p>
                   </div>
 
-                  <div className="space-y-2 pt-2 border-t border-slate-100 text-xs">
-                    <div className="flex items-center justify-between text-slate-600">
+                  <div className={`space-y-2 pt-2 border-t text-xs ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>
+                    <div className="flex items-center justify-between text-slate-500">
                       <span>Status</span>
                       <span className="text-emerald-600 font-bold">Verified</span>
                     </div>
-                    <div className="flex items-center justify-between text-slate-600">
+                    <div className="flex items-center justify-between text-slate-500">
                       <span>Daily Transfer Limit</span>
-                      <span className="font-bold text-slate-900">₹1,00,000</span>
+                      <span className={`font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>₹1,00,000</span>
                     </div>
                   </div>
                 </div>
@@ -670,11 +735,13 @@ export default function Dashboard() {
           {activeTab === "transactions" && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Transaction Records</h2>
+                <h2 className={`text-2xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>Transaction Records</h2>
                 <p className="text-xs text-slate-500 mt-1 font-medium">Filter, search, and review all your past deposits, withdrawals, and transfers.</p>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+              <div className={`p-4 rounded-2xl border shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between ${
+                isDarkMode ? "bg-[#131e3a] border-slate-800" : "bg-white border-slate-200"
+              }`}>
                 <div className="relative w-full md:w-80">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
@@ -682,17 +749,23 @@ export default function Dashboard() {
                     placeholder="Search by description or amount..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-xs rounded-xl pl-9 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full text-xs rounded-xl pl-9 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                    }`}
                   />
                 </div>
 
-                <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+                <div className={`flex items-center space-x-1 p-1 rounded-xl text-xs font-semibold ${
+                  isDarkMode ? "bg-slate-800" : "bg-slate-100"
+                }`}>
                   {["all", "deposit", "withdrawal", "transfer"].map((t) => (
                     <button
                       key={t}
                       onClick={() => { setFilterType(t); setPage(1); }}
                       className={`px-3 py-1.5 rounded-lg capitalize transition cursor-pointer ${
-                        filterType === t ? "bg-white text-blue-600 shadow-sm font-bold" : "text-slate-600"
+                        filterType === t
+                          ? isDarkMode ? "bg-slate-700 text-blue-400 font-bold" : "bg-white text-blue-600 shadow-sm font-bold"
+                          : "text-slate-500"
                       }`}
                     >
                       {t}
@@ -701,10 +774,14 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className={`rounded-3xl border shadow-sm overflow-hidden ${
+                isDarkMode ? "bg-[#131e3a] border-slate-800" : "bg-white border-slate-200"
+              }`}>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-slate-600">
-                    <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                  <table className="w-full text-left text-xs">
+                    <thead className={`border-b text-slate-400 font-bold uppercase text-[10px] tracking-wider ${
+                      isDarkMode ? "bg-slate-800/50 border-slate-800" : "bg-slate-50 border-slate-100"
+                    }`}>
                       <tr>
                         <th className="py-3.5 px-6">TYPE</th>
                         <th className="py-3.5 px-6">DESCRIPTION</th>
@@ -712,7 +789,7 @@ export default function Dashboard() {
                         <th className="py-3.5 px-6 text-right">AMOUNT</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className={`divide-y ${isDarkMode ? "divide-slate-800 text-slate-300" : "divide-slate-100 text-slate-600"}`}>
                       {loading ? (
                         <tr><td colSpan="4" className="py-12 text-center text-slate-400 font-medium">Loading transactions...</td></tr>
                       ) : paginatedTransactions.length === 0 ? (
@@ -724,7 +801,7 @@ export default function Dashboard() {
                             (t.type === "transfer" && t.receiverAccount === accountNo);
 
                           return (
-                            <tr key={t.transactionId || t._id} className="hover:bg-slate-50/80 transition">
+                            <tr key={t.transactionId || t._id} className={isDarkMode ? "hover:bg-slate-800/40" : "hover:bg-slate-50/80"}>
                               <td className="py-4 px-6">
                                 <span
                                   className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
@@ -734,7 +811,7 @@ export default function Dashboard() {
                                   {t.type}
                                 </span>
                               </td>
-                              <td className="py-4 px-6 font-bold text-slate-900">
+                              <td className={`py-4 px-6 font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                                 {t.description || `${t.type} transaction`}
                               </td>
                               <td className="py-4 px-6 text-slate-400 font-medium">
@@ -751,13 +828,17 @@ export default function Dashboard() {
                   </table>
                 </div>
 
-                <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
+                <div className={`p-4 border-t flex items-center justify-between text-xs font-semibold text-slate-500 ${
+                  isDarkMode ? "border-slate-800" : "border-slate-100"
+                }`}>
                   <span>Page {page} of {totalPages}</span>
                   <div className="flex items-center space-x-2">
                     <button
                       disabled={page <= 1}
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 transition cursor-pointer"
+                      className={`px-3 py-1.5 rounded-lg border disabled:opacity-40 transition cursor-pointer ${
+                        isDarkMode ? "border-slate-700 hover:bg-slate-800 text-slate-300" : "border-slate-200 hover:bg-slate-100 text-slate-600"
+                      }`}
                     >
                       <ChevronLeft className="w-4 h-4 inline mr-1" />
                       Prev
@@ -765,7 +846,9 @@ export default function Dashboard() {
                     <button
                       disabled={page >= totalPages}
                       onClick={() => setPage((p) => p + 1)}
-                      className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 transition cursor-pointer"
+                      className={`px-3 py-1.5 rounded-lg border disabled:opacity-40 transition cursor-pointer ${
+                        isDarkMode ? "border-slate-700 hover:bg-slate-800 text-slate-300" : "border-slate-200 hover:bg-slate-100 text-slate-600"
+                      }`}
                     >
                       Next
                       <ChevronRight className="w-4 h-4 inline ml-1" />
@@ -780,17 +863,19 @@ export default function Dashboard() {
           {activeTab === "profile" && (
             <div className="space-y-6 max-w-2xl">
               <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">User Profile Settings</h2>
+                <h2 className={`text-2xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>User Profile Settings</h2>
                 <p className="text-xs text-slate-500 mt-1 font-medium">Manage your personal account credentials and info.</p>
               </div>
 
-              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
-                <div className="flex items-center space-x-4 pb-6 border-b border-slate-100">
+              <div className={`rounded-3xl p-6 border shadow-sm space-y-6 ${
+                isDarkMode ? "bg-[#131e3a] border-slate-800" : "bg-white border-slate-200"
+              }`}>
+                <div className={`flex items-center space-x-4 pb-6 border-b ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>
                   <div className="w-16 h-16 rounded-full bg-blue-600 text-white font-black text-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
                     {userInitial}
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-slate-900 text-lg">{userName}</h3>
+                    <h3 className={`font-extrabold text-lg ${isDarkMode ? "text-white" : "text-slate-900"}`}>{userName}</h3>
                     <span className="text-xs text-slate-400 font-semibold">{user?.email}</span>
                     <div className="mt-1">
                       <span className="bg-blue-100 text-blue-700 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase">
@@ -802,7 +887,7 @@ export default function Dashboard() {
 
                 <form onSubmit={handleProfileUpdate} className="space-y-4 text-xs">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
                       Full Name
                     </label>
                     <input
@@ -810,12 +895,14 @@ export default function Dashboard() {
                       required
                       value={profileForm.fullName}
                       onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 text-slate-900 font-semibold rounded-xl px-4 py-2.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      className={`w-full font-semibold rounded-xl px-4 py-2.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none ${
+                        isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                      }`}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
                       Email Address
                     </label>
                     <input
@@ -823,32 +910,38 @@ export default function Dashboard() {
                       required
                       value={profileForm.email}
                       onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 text-slate-900 font-semibold rounded-xl px-4 py-2.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      className={`w-full font-semibold rounded-xl px-4 py-2.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none ${
+                        isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                      }`}
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
                         Date of Birth
                       </label>
                       <input
                         type="text"
                         disabled
                         value={user?.dob ? new Date(user.dob).toLocaleDateString() : "N/A"}
-                        className="w-full bg-slate-100 border border-slate-200 text-slate-500 font-semibold rounded-xl px-4 py-2.5 cursor-not-allowed"
+                        className={`w-full font-semibold rounded-xl px-4 py-2.5 cursor-not-allowed ${
+                          isDarkMode ? "bg-slate-800/40 border-slate-700 text-slate-400" : "bg-slate-100 border-slate-200 text-slate-500"
+                        }`}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
                         Account Role
                       </label>
                       <input
                         type="text"
                         disabled
                         value={user?.role || "user"}
-                        className="w-full bg-slate-100 border border-slate-200 text-slate-500 font-semibold uppercase rounded-xl px-4 py-2.5 cursor-not-allowed"
+                        className={`w-full font-semibold uppercase rounded-xl px-4 py-2.5 cursor-not-allowed ${
+                          isDarkMode ? "bg-slate-800/40 border-slate-700 text-slate-400" : "bg-slate-100 border-slate-200 text-slate-500"
+                        }`}
                       />
                     </div>
                   </div>
@@ -872,7 +965,9 @@ export default function Dashboard() {
       {/* Action Modal (Deposit / Withdraw / Transfer) */}
       {modalType && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-md p-6 relative">
+          <div className={`rounded-3xl shadow-2xl border w-full max-w-md p-6 relative ${
+            isDarkMode ? "bg-[#131e3a] border-slate-800 text-white" : "bg-white border-slate-100 text-slate-800"
+          }`}>
             <button
               onClick={() => setModalType(null)}
               className="absolute right-5 top-5 text-slate-400 hover:text-slate-600 transition cursor-pointer"
@@ -881,7 +976,7 @@ export default function Dashboard() {
             </button>
 
             <div className="mb-5">
-              <h3 className="text-xl font-bold text-slate-900 capitalize">
+              <h3 className={`text-xl font-bold capitalize ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                 {modalType} Money
               </h3>
               <p className="text-xs text-slate-500 mt-1">
@@ -899,7 +994,7 @@ export default function Dashboard() {
             <form onSubmit={handleAction} className="space-y-4">
               {modalType === "transfer" && (
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
                     RECIPIENT ACCOUNT NUMBER *
                   </label>
                   <input
@@ -908,13 +1003,15 @@ export default function Dashboard() {
                     placeholder="Enter 10-digit account number"
                     value={recipientAccountNumber}
                     onChange={(e) => setRecipientAccountNumber(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 font-mono font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                    className={`w-full rounded-xl px-4 py-2.5 text-xs font-mono font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none ${
+                      isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                    }`}
                   />
                 </div>
               )}
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
                   AMOUNT (₹) *
                 </label>
                 <input
@@ -924,12 +1021,14 @@ export default function Dashboard() {
                   placeholder="Enter amount"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  className={`w-full rounded-xl px-4 py-2.5 text-xs font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none ${
+                    isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                  }`}
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
                   DESCRIPTION (OPTIONAL)
                 </label>
                 <input
@@ -937,7 +1036,9 @@ export default function Dashboard() {
                   placeholder="e.g. Deposit, Rent"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  className={`w-full rounded-xl px-4 py-2.5 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none ${
+                    isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                  }`}
                 />
               </div>
 
