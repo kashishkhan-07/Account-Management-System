@@ -18,8 +18,6 @@ connectDB();
 const app = express();
 
 // Explicit CORS origin configuration for credentials
-import cors from "cors";
-// Allow requests from all origins or process.env.FRONTEND_URL
 app.use(cors({
   origin: process.env.FRONTEND_URL || "*",
   credentials: true,
@@ -44,7 +42,6 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ success: false, message: err.message || "Server Error" });
 });
-
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
