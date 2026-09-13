@@ -22,17 +22,30 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-  Check
+  Check,
+  Menu
 } from "lucide-react";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  // Dynamic Time Greeting (Morning / Afternoon / Evening / Night)
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return "Good Morning";
+    if (hour >= 12 && hour < 17) return "Good Afternoon";
+    if (hour >= 17 && hour < 22) return "Good Evening";
+    return "Good Night";
+  };
+
   // --- Dark / Light Theme State ---
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem("theme") === "dark";
   });
+
+  // Mobile Navigation Drawer Toggle
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -184,19 +197,6 @@ export default function Dashboard() {
     }
   };
 
-  const handleProfileUpdate = async (e) => {
-    e.preventDefault();
-    setProfileSaving(true);
-    try {
-      await API.put("/users/profile", profileForm);
-      showToast("Profile updated successfully!", "success");
-    } catch (err) {
-      showToast(err.response?.data?.message || "Failed to update profile", "error");
-    } finally {
-      setProfileSaving(false);
-    }
-  };
-
   const handleLogout = async () => {
     await logout();
     navigate("/");
@@ -258,76 +258,74 @@ export default function Dashboard() {
 
       {/* Toast Notification */}
       {toast.show && (
-        <div className="fixed top-5 right-5 z-50 flex items-center space-x-2.5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700">
+        <div className="fixed top-5 right-5 z-50 flex items-center space-x-2.5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700 max-w-xs sm:max-w-md">
           {toast.type === "success" && <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />}
           {toast.type === "error" && <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />}
           <span className="text-xs font-semibold">{toast.message}</span>
         </div>
       )}
 
-      {/* Left Sidebar Navigation */}
-      <aside className="w-64 bg-[#0a1427] text-slate-300 flex flex-col justify-between p-6 shrink-0 min-h-screen sticky top-0 h-screen border-r border-slate-800">
+      {/* Overlay Backdrop for Mobile Sidebar Drawer */}
+      {isMobileMenuOpen && (
+        <div
+          onClick={() => setIsMobileMenuOpen(false)}
+          className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden"
+        />
+      )}
+
+      {/* Sidebar Navigation (Desktop Fixed + Mobile Responsive Drawer) */}
+      <aside className={`fixed lg:sticky top-0 left-0 z-50 w-64 bg-[#0a1427] text-slate-300 flex flex-col justify-between p-6 shrink-0 h-screen border-r border-slate-800 transition-transform duration-300 ${
+        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      }`}>
         <div className="space-y-8">
           {/* Logo Header */}
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab("dashboard")}>
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
-              <Building2 className="w-6 h-6" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3 cursor-pointer" onClick={() => { setActiveTab("dashboard"); setIsMobileMenuOpen(false); }}>
+              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                <Building2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-white leading-tight">Account</h2>
+                <p className="text-[11px] text-blue-400 font-semibold tracking-wide">Management System</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-base font-bold text-white leading-tight">Account</h2>
-              <p className="text-[11px] text-blue-400 font-semibold tracking-wide">Management System</p>
-            </div>
+            {/* Mobile Drawer Close Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="lg:hidden p-1.5 text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Navigation Links */}
           <nav className="space-y-1.5">
-            <button
-              onClick={() => setActiveTab("dashboard")}
-              className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-xl text-xs font-bold transition cursor-pointer ${
-                activeTab === "dashboard"
-                  ? "bg-[#1b63ff] text-white shadow-lg shadow-blue-600/30"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-              }`}
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              <span>Dashboard</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("my-account")}
-              className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-xl text-xs font-bold transition cursor-pointer ${
-                activeTab === "my-account"
-                  ? "bg-[#1b63ff] text-white shadow-lg shadow-blue-600/30"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-              }`}
-            >
-              <Wallet className="w-4 h-4" />
-              <span>My Account</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("transactions")}
-              className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-xl text-xs font-bold transition cursor-pointer ${
-                activeTab === "transactions"
-                  ? "bg-[#1b63ff] text-white shadow-lg shadow-blue-600/30"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-              }`}
-            >
-              <ArrowLeftRight className="w-4 h-4" />
-              <span>Transactions</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("profile")}
-              className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-xl text-xs font-bold transition cursor-pointer ${
-                activeTab === "profile"
-                  ? "bg-[#1b63ff] text-white shadow-lg shadow-blue-600/30"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-              }`}
-            >
-              <UserIcon className="w-4 h-4" />
-              <span>Profile</span>
-            </button>
+            {[
+              { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+              { id: "my-account", label: "My Account", icon: Wallet },
+              { id: "transactions", label: "Transactions", icon: ArrowLeftRight },
+              { id: "profile", label: "Profile", icon: UserIcon }
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-xl text-xs font-bold transition cursor-pointer ${
+                    isActive
+                      ? "bg-[#1b63ff] text-white shadow-lg shadow-blue-600/30"
+                      : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
           </nav>
         </div>
 
@@ -341,25 +339,34 @@ export default function Dashboard() {
         </button>
       </aside>
 
-      {/* Right Content Area */}
+      {/* Right Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
 
-        {/* Top Bar */}
-        <header className={`px-8 py-4 flex items-center justify-between sticky top-0 z-30 border-b transition-colors ${
+        {/* Top Navigation Bar */}
+        <header className={`px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 z-30 border-b transition-colors ${
           isDarkMode ? "bg-[#0f172a] border-slate-800 text-white" : "bg-white border-slate-200/80 text-slate-900"
         }`}>
-          <h1 className="text-lg font-bold capitalize">
-            {activeTab.replace("-", " ")}
-          </h1>
+          <div className="flex items-center space-x-3">
+            {/* Hamburger Button for Mobile */}
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden p-2 rounded-xl border text-slate-400 hover:text-white border-slate-700 hover:bg-slate-800 cursor-pointer"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <h1 className="text-base sm:text-lg font-bold capitalize truncate">
+              {activeTab.replace("-", " ")}
+            </h1>
+          </div>
 
-          <div className="flex items-center space-x-5">
-            <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${
+          <div className="flex items-center space-x-2 sm:space-x-5">
+            <span className={`hidden sm:inline-block text-xs font-semibold px-3 py-1.5 rounded-full border ${
               isDarkMode ? "bg-slate-800 text-slate-300 border-slate-700" : "bg-slate-100 text-slate-500 border-slate-200"
             }`}>
               {todayDateStr}
             </span>
 
-            {/* --- FUNCTIONAL THEME TOGGLE BUTTON --- */}
+            {/* Dark Mode Toggle */}
             <button
               onClick={toggleTheme}
               className={`p-2 rounded-full transition cursor-pointer ${
@@ -370,32 +377,31 @@ export default function Dashboard() {
               {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
 
-            <div className={`flex items-center space-x-2.5 pl-2 border-l ${
+            <div className={`flex items-center space-x-2 sm:space-x-2.5 pl-2 border-l ${
               isDarkMode ? "border-slate-800" : "border-slate-200"
             }`}>
-              <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center shadow-md">
+              <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center shadow-md shrink-0">
                 {userInitial}
               </div>
-              <div className="flex flex-col text-left">
-                <span className="text-xs font-bold">{userName}</span>
+              <div className="hidden sm:flex flex-col text-left">
+                <span className="text-xs font-bold truncate max-w-[120px]">{userName}</span>
                 <span className="text-[10px] text-slate-400 font-semibold uppercase">{user?.role || "User"}</span>
               </div>
             </div>
           </div>
         </header>
 
-        {/* Dynamic Main Body per Selected Tab */}
-        <main className="p-8 space-y-8 flex-1 overflow-y-auto">
+        {/* Dynamic Main Body */}
+        <main className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 flex-1 overflow-y-auto max-w-7xl w-full mx-auto">
 
           {/* TAB 1: DASHBOARD */}
           {activeTab === "dashboard" && (
             <>
-              {/* Greeting Banner */}
               <div>
-                <h2 className={`text-2xl sm:text-3xl font-black tracking-tight ${
+                <h2 className={`text-xl sm:text-2xl lg:text-3xl font-black tracking-tight ${
                   isDarkMode ? "text-white" : "text-slate-900"
                 }`}>
-                  Good Afternoon, {userName}!
+                  {getGreeting()}, {userName}!
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">
                   Here's what's happening with your account today.
@@ -405,14 +411,13 @@ export default function Dashboard() {
               {/* Row 1: Debit Card & Quick Action Buttons */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
 
-                {/* --- EXACT BLUE-PURPLE GRADIENT DEBIT CARD (MATCHING PICTURE 1-TO-1) --- */}
-                <div className="lg:col-span-7 bg-gradient-to-br from-[#2952ee] via-[#385fff] to-[#6d30ed] rounded-3xl p-7 text-white shadow-xl flex flex-col justify-between relative overflow-hidden min-h-[220px]">
+                {/* --- EXACT BLUE-PURPLE GRADIENT DEBIT CARD --- */}
+                <div className="lg:col-span-7 bg-gradient-to-br from-[#2952ee] via-[#385fff] to-[#6d30ed] rounded-3xl p-5 sm:p-7 text-white shadow-xl flex flex-col justify-between relative overflow-hidden min-h-[200px] sm:min-h-[220px]">
 
-                  {/* Glossy Diagonal Light Band Across Card */}
                   <div className="absolute top-0 right-1/4 w-32 h-[300px] bg-gradient-to-b from-white/20 via-white/10 to-transparent transform rotate-[30deg] pointer-events-none" />
 
                   <div className="flex items-center justify-between relative z-10">
-                    <div className="flex items-center space-x-2.5">
+                    <div className="flex items-center space-x-2 sm:space-x-2.5">
                       <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center">
                         <Building2 className="w-4 h-4 text-white" />
                       </div>
@@ -422,19 +427,19 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    <div className="w-10 h-7 rounded-md bg-amber-400 border border-amber-300 shadow-inner flex items-center justify-center">
-                      <div className="w-6 h-4 border border-amber-600/40 rounded-sm" />
+                    <div className="w-9 sm:w-10 h-6 sm:h-7 rounded-md bg-amber-400 border border-amber-300 shadow-inner flex items-center justify-center">
+                      <div className="w-5 sm:w-6 h-3.5 sm:h-4 border border-amber-600/40 rounded-sm" />
                     </div>
                   </div>
 
-                  <div className="my-5 relative z-10">
+                  <div className="my-4 sm:my-5 relative z-10">
                     <span className="text-[10px] font-extrabold text-blue-200 uppercase tracking-widest">AVAILABLE BALANCE</span>
-                    <h3 className="text-3xl sm:text-4xl font-black text-white mt-1 tracking-tight">
+                    <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mt-1 tracking-tight">
                       ₹ {Number(balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </h3>
                   </div>
 
-                  <div className="pt-4 border-t border-white/20 flex items-center justify-between text-xs relative z-10">
+                  <div className="pt-3 sm:pt-4 border-t border-white/20 flex flex-wrap items-center justify-between gap-2 text-xs relative z-10">
                     <div>
                       <span className="block text-[9px] font-extrabold text-blue-200 uppercase tracking-wider">CARD HOLDER</span>
                       <span className="font-extrabold uppercase text-white tracking-wider">{userName}</span>
@@ -445,24 +450,24 @@ export default function Dashboard() {
                       <span className="font-mono font-bold tracking-widest text-white">{accountNo || "3964626721"}</span>
                     </div>
 
-                    <span className="bg-emerald-500/30 border border-emerald-400/40 text-emerald-200 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase">
+                    <span className="bg-emerald-500/30 border border-emerald-400/40 text-emerald-200 text-[10px] font-extrabold px-2.5 sm:px-3 py-1 rounded-full uppercase">
                       ACTIVE
                     </span>
                   </div>
                 </div>
 
                 {/* Quick Action Buttons */}
-                <div className={`lg:col-span-5 rounded-3xl p-6 border shadow-sm flex items-center justify-around ${
+                <div className={`lg:col-span-5 rounded-3xl p-4 sm:p-6 border shadow-sm flex items-center justify-around ${
                   isDarkMode ? "bg-[#131e3a] border-slate-800" : "bg-white border-slate-200/80"
                 }`}>
                   <button
                     onClick={() => { setModalType("deposit"); setModalError(""); }}
                     className="flex flex-col items-center justify-center space-y-2 cursor-pointer group"
                   >
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm ${
+                    <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm ${
                       isDarkMode ? "bg-emerald-950/60 text-emerald-400" : "bg-emerald-50 text-emerald-600"
                     }`}>
-                      <ArrowDownLeft className="w-6 h-6" />
+                      <ArrowDownLeft className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
                     <span className={`text-xs font-extrabold ${isDarkMode ? "text-white" : "text-slate-800"}`}>Deposit</span>
                   </button>
@@ -471,10 +476,10 @@ export default function Dashboard() {
                     onClick={() => { setModalType("withdraw"); setModalError(""); }}
                     className="flex flex-col items-center justify-center space-y-2 cursor-pointer group"
                   >
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm ${
+                    <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm ${
                       isDarkMode ? "bg-rose-950/60 text-rose-400" : "bg-rose-50 text-rose-600"
                     }`}>
-                      <ArrowUpRight className="w-6 h-6" />
+                      <ArrowUpRight className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
                     <span className={`text-xs font-extrabold ${isDarkMode ? "text-white" : "text-slate-800"}`}>Withdraw</span>
                   </button>
@@ -483,7 +488,7 @@ export default function Dashboard() {
                     onClick={() => { setModalType("transfer"); setModalError(""); }}
                     className="flex flex-col items-center justify-center space-y-2 cursor-pointer group"
                   >
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm ${
+                    <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm ${
                       isDarkMode ? "bg-purple-950/60 text-purple-400" : "bg-purple-50 text-purple-600"
                     }`}>
                       <Send className="w-5 h-5" />
@@ -493,11 +498,9 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Row 2: Transaction Ratio Breakdown & Recent Activity */}
+              {/* Row 2: Breakdown & Recent Activity */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-                {/* Transaction Ratio Breakdown */}
-                <div className={`lg:col-span-5 rounded-3xl p-6 border shadow-sm space-y-6 ${
+                <div className={`lg:col-span-5 rounded-3xl p-5 sm:p-6 border shadow-sm space-y-6 ${
                   isDarkMode ? "bg-[#131e3a] border-slate-800" : "bg-white border-slate-200/80"
                 }`}>
                   <div className="flex items-center justify-between">
@@ -505,15 +508,15 @@ export default function Dashboard() {
                       <h3 className={`text-sm font-extrabold ${isDarkMode ? "text-white" : "text-slate-900"}`}>Transaction Ratio Breakdown</h3>
                       <p className="text-[11px] text-slate-400 font-semibold mt-0.5">Real-time Inflow vs Outflow Ratio</p>
                     </div>
-                    <span className={`text-[11px] font-bold px-3 py-1 rounded-xl border ${
+                    <span className={`text-[11px] font-bold px-2.5 py-1 rounded-xl border ${
                       isDarkMode ? "text-slate-300 bg-slate-800 border-slate-700" : "text-slate-600 bg-slate-100 border-slate-200"
                     }`}>
                       Last 30 Days
                     </span>
                   </div>
 
-                  <div className="flex items-center space-x-6">
-                    <div className="relative w-32 h-32 flex items-center justify-center shrink-0">
+                  <div className="flex flex-col sm:flex-row items-center gap-6 sm:space-x-6">
+                    <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center shrink-0">
                       <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                         <path
                           className="text-rose-500"
@@ -538,7 +541,7 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    <div className="space-y-3 flex-1">
+                    <div className="space-y-3 w-full flex-1">
                       <div className={`p-3 rounded-2xl border flex items-center justify-between ${
                         isDarkMode ? "bg-slate-800/60 border-slate-800" : "bg-slate-50 border-slate-100"
                       }`}>
@@ -547,7 +550,7 @@ export default function Dashboard() {
                             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                             <span className={`text-xs font-extrabold ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>Deposits (Inflow)</span>
                           </div>
-                          <span className="text-[10px] font-bold text-emerald-600 block mt-0.5">{inflowPercent}% of Total Volume</span>
+                          <span className="text-[10px] font-bold text-emerald-600 block mt-0.5">{inflowPercent}% of Total</span>
                         </div>
                         <span className="text-xs font-black text-emerald-600">+₹{totalInflow.toLocaleString()}</span>
                       </div>
@@ -560,7 +563,7 @@ export default function Dashboard() {
                             <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
                             <span className={`text-xs font-extrabold ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>Withdrawals (Outflow)</span>
                           </div>
-                          <span className="text-[10px] font-bold text-rose-600 block mt-0.5">{outflowPercent}% of Total Volume</span>
+                          <span className="text-[10px] font-bold text-rose-600 block mt-0.5">{outflowPercent}% of Total</span>
                         </div>
                         <span className="text-xs font-black text-rose-600">-₹{totalOutflow.toLocaleString()}</span>
                       </div>
@@ -568,8 +571,8 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* Recent Activity Card */}
-                <div className={`lg:col-span-7 rounded-3xl p-6 border shadow-sm flex flex-col justify-between ${
+                {/* Recent Activity Table */}
+                <div className={`lg:col-span-7 rounded-3xl p-5 sm:p-6 border shadow-sm flex flex-col justify-between ${
                   isDarkMode ? "bg-[#131e3a] border-slate-800" : "bg-white border-slate-200/80"
                 }`}>
                   <div>
@@ -584,16 +587,12 @@ export default function Dashboard() {
                     </div>
 
                     {loading ? (
-                      <div className="py-12 text-center text-xs text-slate-400 font-medium">
-                        Loading recent transactions...
-                      </div>
+                      <div className="py-12 text-center text-xs text-slate-400 font-medium">Loading recent transactions...</div>
                     ) : transactions.length === 0 ? (
-                      <div className="py-12 text-center text-xs text-slate-400 font-semibold">
-                        No recent transactions found in database.
-                      </div>
+                      <div className="py-12 text-center text-xs text-slate-400 font-semibold">No recent transactions found.</div>
                     ) : (
                       <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs">
+                        <table className="w-full text-left text-xs min-w-[400px]">
                           <thead className={`border-b text-slate-400 font-bold uppercase text-[10px] tracking-wider ${
                             isDarkMode ? "border-slate-800" : "border-slate-100"
                           }`}>
@@ -613,27 +612,19 @@ export default function Dashboard() {
                               return (
                                 <tr key={t.transactionId || t._id} className={isDarkMode ? "hover:bg-slate-800/40" : "hover:bg-slate-50/80"}>
                                   <td className="py-3 px-3">
-                                    <span
-                                      className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase ${
-                                        isCredit
-                                          ? "bg-emerald-100 text-emerald-700"
-                                          : "bg-rose-100 text-rose-700"
-                                      }`}
-                                    >
+                                    <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                                      isCredit ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+                                    }`}>
                                       {t.type}
                                     </span>
                                   </td>
                                   <td className={`py-3 px-3 font-bold ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
                                     {t.description || `${t.type} operation`}
                                   </td>
-                                  <td className="py-3 px-3 text-slate-400 font-medium">
+                                  <td className="py-3 px-3 text-slate-400 font-medium whitespace-nowrap">
                                     {new Date(t.createdAt || t.timestamp).toLocaleDateString()}
                                   </td>
-                                  <td
-                                    className={`py-3 px-3 text-right font-black ${
-                                      isCredit ? "text-emerald-600" : "text-rose-600"
-                                    }`}
-                                  >
+                                  <td className={`py-3 px-3 text-right font-black ${isCredit ? "text-emerald-600" : "text-rose-600"}`}>
                                     {isCredit ? "+" : "-"}₹{Number(t.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                   </td>
                                 </tr>
@@ -653,12 +644,12 @@ export default function Dashboard() {
           {activeTab === "my-account" && (
             <div className="space-y-6">
               <div>
-                <h2 className={`text-2xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>My Bank Account Details</h2>
+                <h2 className={`text-xl sm:text-2xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>My Bank Account Details</h2>
                 <p className="text-xs text-slate-500 mt-1 font-medium">Comprehensive overview of your active bank account.</p>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className={`lg:col-span-2 rounded-3xl p-6 border shadow-sm space-y-6 ${
+                <div className={`lg:col-span-2 rounded-3xl p-5 sm:p-6 border shadow-sm space-y-6 ${
                   isDarkMode ? "bg-[#131e3a] border-slate-800" : "bg-white border-slate-200"
                 }`}>
                   <div className={`flex items-center justify-between pb-4 border-b ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>
@@ -674,7 +665,7 @@ export default function Dashboard() {
                     <span className="bg-emerald-100 text-emerald-700 text-xs font-extrabold px-3 py-1 rounded-full">ACTIVE</span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 text-xs">
                     <div className={`p-4 rounded-2xl border space-y-1 ${isDarkMode ? "bg-slate-800/60 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ACCOUNT NUMBER</span>
                       <div className="flex items-center justify-between">
@@ -702,7 +693,7 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div className={`rounded-3xl p-6 border shadow-sm space-y-4 flex flex-col justify-between ${
+                <div className={`rounded-3xl p-5 sm:p-6 border shadow-sm space-y-4 flex flex-col justify-between ${
                   isDarkMode ? "bg-[#131e3a] border-slate-800" : "bg-white border-slate-200"
                 }`}>
                   <div className="space-y-3">
@@ -734,14 +725,14 @@ export default function Dashboard() {
           {activeTab === "transactions" && (
             <div className="space-y-6">
               <div>
-                <h2 className={`text-2xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>Transaction Records</h2>
+                <h2 className={`text-xl sm:text-2xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>Transaction Records</h2>
                 <p className="text-xs text-slate-500 mt-1 font-medium">Filter, search, and review all your past deposits, withdrawals, and transfers.</p>
               </div>
 
-              <div className={`p-4 rounded-2xl border shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between ${
+              <div className={`p-4 rounded-2xl border shadow-sm flex flex-col sm:flex-row gap-3 sm:gap-4 items-center justify-between ${
                 isDarkMode ? "bg-[#131e3a] border-slate-800" : "bg-white border-slate-200"
               }`}>
-                <div className="relative w-full md:w-80">
+                <div className="relative w-full sm:w-80">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
@@ -754,7 +745,7 @@ export default function Dashboard() {
                   />
                 </div>
 
-                <div className={`flex items-center space-x-1 p-1 rounded-xl text-xs font-semibold ${
+                <div className={`flex flex-wrap items-center space-x-1 p-1 rounded-xl text-xs font-semibold w-full sm:w-auto justify-center ${
                   isDarkMode ? "bg-slate-800" : "bg-slate-100"
                 }`}>
                   {["all", "deposit", "withdrawal", "transfer"].map((t) => (
@@ -777,7 +768,7 @@ export default function Dashboard() {
                 isDarkMode ? "bg-[#131e3a] border-slate-800" : "bg-white border-slate-200"
               }`}>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
+                  <table className="w-full text-left text-xs min-w-[500px]">
                     <thead className={`border-b text-slate-400 font-bold uppercase text-[10px] tracking-wider ${
                       isDarkMode ? "bg-slate-800/50 border-slate-800" : "bg-slate-50 border-slate-100"
                     }`}>
@@ -802,18 +793,16 @@ export default function Dashboard() {
                           return (
                             <tr key={t.transactionId || t._id} className={isDarkMode ? "hover:bg-slate-800/40" : "hover:bg-slate-50/80"}>
                               <td className="py-4 px-6">
-                                <span
-                                  className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
-                                    isCredit ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
-                                  }`}
-                                >
+                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
+                                  isCredit ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+                                }`}>
                                   {t.type}
                                 </span>
                               </td>
                               <td className={`py-4 px-6 font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                                 {t.description || `${t.type} transaction`}
                               </td>
-                              <td className="py-4 px-6 text-slate-400 font-medium">
+                              <td className="py-4 px-6 text-slate-400 font-medium whitespace-nowrap">
                                 {new Date(t.createdAt || t.timestamp).toLocaleString()}
                               </td>
                               <td className={`py-4 px-6 text-right font-black text-sm ${isCredit ? "text-emerald-600" : "text-rose-600"}`}>
@@ -862,19 +851,19 @@ export default function Dashboard() {
           {activeTab === "profile" && (
             <div className="space-y-6 max-w-2xl">
               <div>
-                <h2 className={`text-2xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>User Profile Settings</h2>
+                <h2 className={`text-xl sm:text-2xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>User Profile Settings</h2>
                 <p className="text-xs text-slate-500 mt-1 font-medium">Manage your personal account credentials and info.</p>
               </div>
 
-              <div className={`rounded-3xl p-6 border shadow-sm space-y-6 ${
+              <div className={`rounded-3xl p-5 sm:p-6 border shadow-sm space-y-6 ${
                 isDarkMode ? "bg-[#131e3a] border-slate-800" : "bg-white border-slate-200"
               }`}>
                 <div className={`flex items-center space-x-4 pb-6 border-b ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>
-                  <div className="w-16 h-16 rounded-full bg-blue-600 text-white font-black text-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-blue-600 text-white font-black text-xl flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
                     {userInitial}
                   </div>
                   <div>
-                    <h3 className={`font-extrabold text-lg ${isDarkMode ? "text-white" : "text-slate-900"}`}>{userName}</h3>
+                    <h3 className={`font-extrabold text-base sm:text-lg ${isDarkMode ? "text-white" : "text-slate-900"}`}>{userName}</h3>
                     <span className="text-xs text-slate-400 font-semibold">{user?.email}</span>
                     <div className="mt-1">
                       <span className="bg-blue-100 text-blue-700 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase">
@@ -913,7 +902,7 @@ export default function Dashboard() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
                         Date of Birth
@@ -953,7 +942,7 @@ export default function Dashboard() {
       {/* Action Modal (Deposit / Withdraw / Transfer) */}
       {modalType && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`rounded-3xl shadow-2xl border w-full max-w-md p-6 relative ${
+          <div className={`rounded-3xl shadow-2xl border w-full max-w-md p-5 sm:p-6 relative ${
             isDarkMode ? "bg-[#131e3a] border-slate-800 text-white" : "bg-white border-slate-100 text-slate-800"
           }`}>
             <button
@@ -964,7 +953,7 @@ export default function Dashboard() {
             </button>
 
             <div className="mb-5">
-              <h3 className={`text-xl font-bold capitalize ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+              <h3 className={`text-lg sm:text-xl font-bold capitalize ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                 {modalType} Money
               </h3>
               <p className="text-xs text-slate-500 mt-1">
