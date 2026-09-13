@@ -1,39 +1,51 @@
 import axios from "axios";
 
-const API = axios.create({
-  baseURL: "http://localhost:5000/api",
+// Automatically detects Production (Render) vs Local Dev (localhost)
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.PROD ? "/api" : "http://localhost:5000/api");
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
   withCredentials: true,
-});
-
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  headers: {
+    "Content-Type": "application/json"
   }
-  return config;
 });
 
-API.interceptors.response.use(
+// Request Interceptor: Attach Access Token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response Interceptor: Auto Refresh Token on 401
+api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    const isAuthRoute =
-      originalRequest.url?.includes("/auth/login") ||
-      originalRequest.url?.includes("/auth/register");
-
-    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        const res = await API.post("/auth/refresh-token");
-        const newToken = res.data.accessToken || res.data.data?.accessToken;
-        if (newToken) {
-          localStorage.setItem("accessToken", newToken);
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          return API(originalRequest);
+        const refreshToken = localStorage.getItem("refreshToken");
+        if (refreshToken) {
+          const res = await axios.post(`${API_BASE_URL}/auth/refresh-token`, { refreshToken });
+          const newAccessToken = res.data.accessToken || res.data.data?.accessToken;
+          if (newAccessToken) {
+            localStorage.setItem("accessToken", newAccessToken);
+            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+            return api(originalRequest);
+          }
         }
       } catch (refreshErr) {
         localStorage.removeItem("accessToken");
-        localStorage.removeItem("user");
+        localStorage.removeItem("refreshToken");
         window.location.href = "/";
       }
     }
@@ -41,4 +53,4 @@ API.interceptors.response.use(
   }
 );
 
-export default API;
+export default api;

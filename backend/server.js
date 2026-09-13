@@ -18,14 +18,13 @@ connectDB();
 const app = express();
 
 // Explicit CORS origin configuration for credentials
-app.use(
-  cors({
-    origin: ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"],
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
+import cors from "cors";
+// Allow requests from all origins or process.env.FRONTEND_URL
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "*",
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+}));
 
 app.use(express.json());
 app.use(cookieParser());
