@@ -47,6 +47,9 @@ export default function Dashboard() {
   // Mobile Navigation Drawer Toggle
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Logout Confirmation Modal State
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add("dark");
@@ -99,14 +102,10 @@ export default function Dashboard() {
     }, 3500);
   };
 
+  // Clean fetchBalance without duplicate retry loops
   const fetchBalance = async () => {
     try {
-      let res;
-      try {
-        res = await API.get("/account/balance");
-      } catch (err) {
-        res = await API.get("/accounts/balance");
-      }
+      const res = await API.get("/account/balance");
       const data = res.data.data || res.data;
       setAccountData(data);
       setBalance(data.balance !== undefined ? data.balance : res.data.balance || 0);
@@ -115,14 +114,10 @@ export default function Dashboard() {
     }
   };
 
+  // Clean fetchTransactions without 404 endpoint retry loops
   const fetchTransactions = async () => {
     try {
-      let res;
-      try {
-        res = await API.get("/transactions");
-      } catch (err) {
-        res = await API.get("/transaction");
-      }
+      const res = await API.get("/transactions");
       const list = res.data.data || res.data.transactions || [];
       setTransactions(list);
     } catch (err) {
@@ -198,6 +193,7 @@ export default function Dashboard() {
   };
 
   const handleLogout = async () => {
+    setShowLogoutModal(false);
     await logout();
     navigate("/");
   };
@@ -211,7 +207,7 @@ export default function Dashboard() {
     }
   };
 
-  // Calculations
+  // Precise 2-Decimal Calculations
   const accountNo = accountData?.accountNumber || "";
   const totalInflow = transactions
     .filter((t) => t.type === "deposit" || (t.type === "transfer" && t.receiverAccount === accountNo))
@@ -222,8 +218,60 @@ export default function Dashboard() {
     .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
   const grandTotal = totalInflow + totalOutflow;
-  const inflowPercent = grandTotal > 0 ? Math.round((totalInflow / grandTotal) * 100) : 0;
-  const outflowPercent = grandTotal > 0 ? Math.round((totalOutflow / grandTotal) * 100) : 0;
+  const rawInflow = grandTotal > 0 ? (totalInflow / grandTotal) * 100 : 0;
+  const rawOutflow = grandTotal > 0 ? (totalOutflow / grandTotal) * 100 : 0;
+
+  const inflowPercent = rawInflow > 0 ? (rawInflow % 1 === 0 ? rawInflow.toFixed(0) : rawInflow.toFixed(2)) : 0;
+  const outflowPercent = rawOutflow > 0 ? (rawOutflow % 1 === 0 ? rawOutflow.toFixed(0) : rawOutflow.toFixed(2)) : 0;
+
+  // Smart Transaction Description Formatting (Name + Account Number for both Sender & Receiver Views)
+  const getTransactionDescription = (t) => {
+    if (t.type === "transfer") {
+      const isReceiver =
+        t.receiverAccount === accountNo ||
+        (t.receiverAccount && accountNo && t.receiverAccount.toString() === accountNo.toString());
+
+      const senderName =
+        t.senderName ||
+        t.sender?.fullName ||
+        t.sender?.name ||
+        t.senderId?.fullName ||
+        t.senderId?.name;
+
+      const senderAcc = t.senderAccount || t.senderAccountNumber || t.senderAccountNo;
+
+      const receiverName =
+        t.receiverName ||
+        t.receiver?.fullName ||
+        t.receiver?.name ||
+        t.receiverId?.fullName ||
+        t.receiverId?.name ||
+        t.recipientName ||
+        t.recipient?.fullName ||
+        t.recipient?.name;
+
+      const receiverAcc = t.receiverAccount || t.receiverAccountNumber || t.receiverAccountNo;
+
+      if (isReceiver) {
+        if (senderName && senderAcc) return `Received from ${senderName} (${senderAcc})`;
+        if (senderName) return `Received from ${senderName}`;
+        if (t.description && !t.description.toLowerCase().includes("transfer to acc ")) {
+          return t.description.replace(/^Transfer to\s+/i, "Received from ");
+        }
+        if (senderAcc) return `Received from Acc (${senderAcc})`;
+        return t.description?.replace(/^Transfer to\s+/i, "Received from ") || "Received Money Transfer";
+      } else {
+        if (receiverName && receiverAcc) return `Transfer to ${receiverName} (${receiverAcc})`;
+        if (receiverName) return `Transfer to ${receiverName}`;
+        if (t.description && !t.description.toLowerCase().includes("transfer to acc ")) {
+          return t.description;
+        }
+        if (receiverAcc) return `Transfer to Acc (${receiverAcc})`;
+        return t.description || "Transfer to Recipient";
+      }
+    }
+    return t.description || `${t.type} operation`;
+  };
 
   const todayDateStr = new Date().toLocaleDateString("en-US", {
     weekday: "short",
@@ -239,8 +287,10 @@ export default function Dashboard() {
   const filteredTransactions = transactions.filter((t) => {
     const matchesType = filterType === "all" || t.type === filterType;
     const term = searchTerm.toLowerCase();
+    const formattedDesc = getTransactionDescription(t).toLowerCase();
     const matchesSearch =
       !term ||
+      formattedDesc.includes(term) ||
       t.description?.toLowerCase().includes(term) ||
       t.type?.toLowerCase().includes(term) ||
       t.amount?.toString().includes(term);
@@ -329,9 +379,9 @@ export default function Dashboard() {
           </nav>
         </div>
 
-        {/* Sidebar Footer - Logout */}
+        {/* Sidebar Footer - Logout Button */}
         <button
-          onClick={handleLogout}
+          onClick={() => setShowLogoutModal(true)}
           className="flex items-center space-x-3 px-4 py-3 text-slate-400 hover:text-rose-400 text-xs font-bold transition cursor-pointer"
         >
           <LogOut className="w-4 h-4" />
@@ -619,7 +669,7 @@ export default function Dashboard() {
                                     </span>
                                   </td>
                                   <td className={`py-3 px-3 font-bold ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
-                                    {t.description || `${t.type} operation`}
+                                    {getTransactionDescription(t)}
                                   </td>
                                   <td className="py-3 px-3 text-slate-400 font-medium whitespace-nowrap">
                                     {new Date(t.createdAt || t.timestamp).toLocaleDateString()}
@@ -773,7 +823,7 @@ export default function Dashboard() {
                                 </span>
                               </td>
                               <td className={`py-4 px-6 font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                                {t.description || `${t.type} transaction`}
+                                {getTransactionDescription(t)}
                               </td>
                               <td className="py-4 px-6 text-slate-400 font-medium whitespace-nowrap">
                                 {new Date(t.createdAt || t.timestamp).toLocaleString()}
@@ -1009,6 +1059,44 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className={`rounded-3xl shadow-2xl border w-full max-w-sm p-6 text-center space-y-4 ${
+            isDarkMode ? "bg-[#131e3a] border-slate-800 text-white" : "bg-white border-slate-100 text-slate-800"
+          }`}>
+            <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto">
+              <LogOut className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className={`text-base font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                Confirm Logout
+              </h3>
+              <p className="text-xs text-slate-400 mt-1 font-medium">
+                Are you sure you want to log out of your account?
+              </p>
+            </div>
+            <div className="flex items-center space-x-3 pt-2">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                  isDarkMode ? "border-slate-700 hover:bg-slate-800 text-slate-300" : "border-slate-200 hover:bg-slate-100 text-slate-600"
+                }`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md transition cursor-pointer"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
