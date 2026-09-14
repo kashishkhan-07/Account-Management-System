@@ -648,73 +648,46 @@ export default function Dashboard() {
                 <p className="text-xs text-slate-500 mt-1 font-medium">Comprehensive overview of your active bank account.</p>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className={`lg:col-span-2 rounded-3xl p-5 sm:p-6 border shadow-sm space-y-6 ${
-                  isDarkMode ? "bg-[#131e3a] border-slate-800" : "bg-white border-slate-200"
-                }`}>
-                  <div className={`flex items-center justify-between pb-4 border-b ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                        <Wallet className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className={`font-extrabold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>{accountData?.accountType || "Savings Account"}</h3>
-                        <span className="text-xs text-slate-400 font-semibold">Primary Banking Account</span>
-                      </div>
+              <div className={`rounded-3xl p-5 sm:p-6 border shadow-sm space-y-6 max-w-4xl ${
+                isDarkMode ? "bg-[#131e3a] border-slate-800" : "bg-white border-slate-200"
+              }`}>
+                <div className={`flex items-center justify-between pb-4 border-b ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                      <Wallet className="w-5 h-5" />
                     </div>
-                    <span className="bg-emerald-100 text-emerald-700 text-xs font-extrabold px-3 py-1 rounded-full">ACTIVE</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 text-xs">
-                    <div className={`p-4 rounded-2xl border space-y-1 ${isDarkMode ? "bg-slate-800/60 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ACCOUNT NUMBER</span>
-                      <div className="flex items-center justify-between">
-                        <span className={`font-mono font-bold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>{accountNo || "N/A"}</span>
-                        <button onClick={copyAccountNumber} className="text-blue-600 hover:text-blue-700 cursor-pointer p-1">
-                          {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className={`p-4 rounded-2xl border space-y-1 ${isDarkMode ? "bg-slate-800/60 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">AVAILABLE BALANCE</span>
-                      <div className={`font-extrabold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>₹{Number(balance).toLocaleString()}</div>
-                    </div>
-
-                    <div className={`p-4 rounded-2xl border space-y-1 ${isDarkMode ? "bg-slate-800/60 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">CURRENCY</span>
-                      <div className={`font-extrabold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>INR (₹) - Indian Rupee</div>
-                    </div>
-
-                    <div className={`p-4 rounded-2xl border space-y-1 ${isDarkMode ? "bg-slate-800/60 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">CARD HOLDER NAME</span>
-                      <div className={`font-extrabold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>{userName}</div>
+                    <div>
+                      <h3 className={`font-extrabold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>{accountData?.accountType || "Savings Account"}</h3>
+                      <span className="text-xs text-slate-400 font-semibold">Primary Banking Account</span>
                     </div>
                   </div>
+                  <span className="bg-emerald-100 text-emerald-700 text-xs font-extrabold px-3 py-1 rounded-full">ACTIVE</span>
                 </div>
 
-                <div className={`rounded-3xl p-5 sm:p-6 border shadow-sm space-y-4 flex flex-col justify-between ${
-                  isDarkMode ? "bg-[#131e3a] border-slate-800" : "bg-white border-slate-200"
-                }`}>
-                  <div className="space-y-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                      <ShieldCheck className="w-5 h-5" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 text-xs">
+                  <div className={`p-4 rounded-2xl border space-y-1 ${isDarkMode ? "bg-slate-800/60 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ACCOUNT NUMBER</span>
+                    <div className="flex items-center justify-between">
+                      <span className={`font-mono font-bold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>{accountNo || "N/A"}</span>
+                      <button onClick={copyAccountNumber} className="text-blue-600 hover:text-blue-700 cursor-pointer p-1">
+                        {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                      </button>
                     </div>
-                    <h3 className={`font-extrabold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Bank-grade Security</h3>
-                    <p className="text-xs text-slate-500 leading-relaxed">
-                      Your account is protected by 256-bit SSL encryption and tokenized authentication.
-                    </p>
                   </div>
 
-                  <div className={`space-y-2 pt-2 border-t text-xs ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>
-                    <div className="flex items-center justify-between text-slate-500">
-                      <span>Status</span>
-                      <span className="text-emerald-600 font-bold">Verified</span>
-                    </div>
-                    <div className="flex items-center justify-between text-slate-500">
-                      <span>Daily Transfer Limit</span>
-                      <span className={`font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>₹1,00,000</span>
-                    </div>
+                  <div className={`p-4 rounded-2xl border space-y-1 ${isDarkMode ? "bg-slate-800/60 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">AVAILABLE BALANCE</span>
+                    <div className={`font-extrabold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>₹{Number(balance).toLocaleString()}</div>
+                  </div>
+
+                  <div className={`p-4 rounded-2xl border space-y-1 ${isDarkMode ? "bg-slate-800/60 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">CURRENCY</span>
+                    <div className={`font-extrabold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>INR (₹) - Indian Rupee</div>
+                  </div>
+
+                  <div className={`p-4 rounded-2xl border space-y-1 ${isDarkMode ? "bg-slate-800/60 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">CARD HOLDER NAME</span>
+                    <div className={`font-extrabold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>{userName}</div>
                   </div>
                 </div>
               </div>
