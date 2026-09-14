@@ -15,7 +15,9 @@ import {
   RefreshCw,
   CheckCircle2,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 
 export default function AdminPanel() {
@@ -36,6 +38,13 @@ export default function AdminPanel() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
 
+  // --- Pagination State ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const limit = 7; // Items per page
+
+  // Logout Confirmation Modal State
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
 
   const showToast = (message, type = "success") => {
@@ -44,8 +53,8 @@ export default function AdminPanel() {
       setToast({ show: false, message: "", type: "success" });
     }, 3500);
   };
- const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? "/api" : "http://localhost:5000/api");
- 
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? "/api" : "http://localhost:5000/api");
+
   const fetchAdminData = async () => {
     setLoading(true);
     setError("");
@@ -97,6 +106,11 @@ export default function AdminPanel() {
     fetchAdminData();
   }, []);
 
+  // Reset to page 1 whenever filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, roleFilter]);
+
   const handleToggleStatus = async (targetUser) => {
     const targetId = targetUser._id || targetUser.id;
     const currentActive = targetUser.isActive !== false;
@@ -139,7 +153,9 @@ export default function AdminPanel() {
     }
   };
 
-  const handleLogout = async () => {
+  // Confirmed Logout Handler
+  const handleLogoutConfirm = async () => {
+    setShowLogoutModal(false);
     await logout();
     navigate("/");
   };
@@ -167,6 +183,10 @@ export default function AdminPanel() {
 
     return matchesSearch && matchesStatus && matchesRole;
   });
+
+  // Calculate Pagination Details
+  const totalPages = Math.ceil(filteredUsers.length / limit) || 1;
+  const paginatedUsers = filteredUsers.slice((currentPage - 1) * limit, currentPage * limit);
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans antialiased text-slate-800 relative">
@@ -207,7 +227,7 @@ export default function AdminPanel() {
               </span>
             </div>
             <button
-              onClick={handleLogout}
+              onClick={() => setShowLogoutModal(true)}
               className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 transition cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -357,14 +377,14 @@ export default function AdminPanel() {
                       Loading user accounts...
                     </td>
                   </tr>
-                ) : filteredUsers.length === 0 ? (
+                ) : paginatedUsers.length === 0 ? (
                   <tr>
                     <td colSpan="7" className="px-6 py-12 text-center text-slate-400 font-medium">
                       No matching user accounts found.
                     </td>
                   </tr>
                 ) : (
-                  filteredUsers.map((u) => {
+                  paginatedUsers.map((u) => {
                     const userId = u._id || u.id;
                     const isTargetLoading = actionLoadingId === userId;
                     const isAdminUser = u.role === "admin";
@@ -447,8 +467,73 @@ export default function AdminPanel() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls Footer */}
+          <div className="px-6 py-4 bg-slate-50/60 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-semibold text-slate-500">
+            <span>
+              Showing {filteredUsers.length > 0 ? (currentPage - 1) * limit + 1 : 0} to{" "}
+              {Math.min(currentPage * limit, filteredUsers.length)} of {filteredUsers.length} user accounts
+            </span>
+
+            {totalPages > 1 && (
+              <div className="flex items-center space-x-2">
+                <button
+                  disabled={currentPage <= 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer text-slate-700 flex items-center space-x-1"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span>Prev</span>
+                </button>
+                <span className="px-2.5 text-slate-800 font-bold">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer text-slate-700 flex items-center space-x-1"
+                >
+                  <span>Next</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </main>
+
+      {/* Logout Confirmation Modal Popup */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-3xl shadow-2xl w-full max-w-sm p-6 text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto">
+              <LogOut className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900">
+                Confirm Logout
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 font-medium">
+                Are you sure you want to log out of the Admin Control Panel?
+              </p>
+            </div>
+            <div className="flex items-center space-x-3 pt-2">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 py-2.5 rounded-xl text-xs font-bold border border-slate-200 hover:bg-slate-100 text-slate-600 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogoutConfirm}
+                className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md transition cursor-pointer"
+              >
+                Yes, Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
