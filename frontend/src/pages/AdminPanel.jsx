@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -95,6 +94,12 @@ export default function AdminPanel() {
       });
     } catch (err) {
       console.error("Admin fetch error:", err);
+      // Auto redirect to login on 401 token expiry, matching Dashboard behavior
+      if (err.response?.status === 401) {
+        logout();
+        navigate("/");
+        return;
+      }
       const errMsg = err.response?.data?.message || "Failed to load admin data";
       setError(errMsg);
       showToast(errMsg, "error");
@@ -147,6 +152,11 @@ export default function AdminPanel() {
       showToast(successMsg, newStatus ? "success" : "warning");
     } catch (err) {
       console.error("Status update error:", err);
+      if (err.response?.status === 401) {
+        logout();
+        navigate("/");
+        return;
+      }
       const errMsg = err.response?.data?.message || "Failed to update user status";
       showToast(errMsg, "error");
     } finally {

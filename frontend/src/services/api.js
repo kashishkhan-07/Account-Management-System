@@ -31,7 +31,10 @@ const processQueue = (error, token = null) => {
 // Request Interceptor: Attach Access Token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
+    const token =
+      localStorage.getItem("accessToken") ||
+      localStorage.getItem("token") ||
+      localStorage.getItem("shopsphere_token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -46,7 +49,11 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes("/auth/refresh-token")
+    ) {
       if (isRefreshing) {
         // If refresh is already in progress, queue this request
         return new Promise((resolve, reject) => {
@@ -64,18 +71,14 @@ api.interceptors.response.use(
 
       const refreshToken =
         localStorage.getItem("refreshToken") ||
-        localStorage.getItem("refresh_token");
-
-      if (!refreshToken) {
-        isRefreshing = false;
-        return Promise.reject(error);
-      }
+        localStorage.getItem("refresh_token") ||
+        localStorage.getItem("token");
 
       try {
         console.log("🔄 [Auth] Access Token Expired. Calling /auth/refresh-token...");
         const res = await axios.post(
           `${API_BASE_URL}/auth/refresh-token`,
-          { refreshToken, token: refreshToken },
+          refreshToken ? { refreshToken, token: refreshToken } : {},
           { withCredentials: true }
         );
 
@@ -88,9 +91,7 @@ api.interceptors.response.use(
         if (newAccessToken) {
           console.log("✅ [Auth] Token Refreshed Successfully!");
           localStorage.setItem("accessToken", newAccessToken);
-          if (localStorage.getItem("token")) {
-            localStorage.setItem("token", newAccessToken);
-          }
+          localStorage.setItem("token", newAccessToken);
 
           api.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
@@ -110,6 +111,7 @@ api.interceptors.response.use(
           localStorage.removeItem("token");
           localStorage.removeItem("refreshToken");
           localStorage.removeItem("refresh_token");
+          localStorage.removeItem("shopsphere_token");
           window.location.href = "/";
         }
         return Promise.reject(refreshErr);
