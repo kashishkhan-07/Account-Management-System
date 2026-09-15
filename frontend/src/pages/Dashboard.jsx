@@ -558,11 +558,6 @@ export default function Dashboard() {
                       <h3 className={`text-sm font-extrabold ${isDarkMode ? "text-white" : "text-slate-900"}`}>Transaction Ratio Breakdown</h3>
                       <p className="text-[11px] text-slate-400 font-semibold mt-0.5">Real-time Inflow vs Outflow Ratio</p>
                     </div>
-                    <span className={`text-[11px] font-bold px-2.5 py-1 rounded-xl border ${
-                      isDarkMode ? "text-slate-300 bg-slate-800 border-slate-700" : "text-slate-600 bg-slate-100 border-slate-200"
-                    }`}>
-                      Last 30 Days
-                    </span>
                   </div>
 
                   <div className="flex flex-col sm:flex-row items-center gap-6 sm:space-x-6">
@@ -916,7 +911,7 @@ export default function Dashboard() {
                       Email Address
                     </label>
                     <input
-                      type="email"
+                      type="text"
                       readOnly
                       value={profileForm.email}
                       className={`w-full font-semibold rounded-xl px-4 py-2.5 ${
