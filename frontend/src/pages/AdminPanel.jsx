@@ -19,10 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
-  X,
-  LayoutDashboard,
-  ShieldCheck,
-  Activity
+  X
 } from "lucide-react";
 
 export default function AdminPanel() {
@@ -250,7 +247,7 @@ export default function AdminPanel() {
             </div>
           </div>
 
-          {/* Navigation Items */}
+          {/* Navigation Items (System Vault & Security removed) */}
           <nav className="space-y-1.5 pt-4">
             <a
               href="#users"
@@ -258,22 +255,6 @@ export default function AdminPanel() {
             >
               <Users className="w-4 h-4 shrink-0" />
               <span>Users Management</span>
-            </a>
-            <a
-              href="#stats"
-              onClick={(e) => { e.preventDefault(); showToast("Showing live system statistics"); }}
-              className="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-semibold transition"
-            >
-              <Activity className="w-4 h-4 shrink-0" />
-              <span>System Vault</span>
-            </a>
-            <a
-              href="#security"
-              onClick={(e) => { e.preventDefault(); showToast("Access permissions are up to date"); }}
-              className="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-semibold transition"
-            >
-              <ShieldCheck className="w-4 h-4 shrink-0" />
-              <span>Security & Roles</span>
             </a>
           </nav>
         </div>
@@ -346,14 +327,6 @@ export default function AdminPanel() {
                   <Users className="w-4 h-4" />
                   <span>Users Management</span>
                 </a>
-                <a
-                  href="#stats"
-                  onClick={() => { setIsSidebarOpen(false); showToast("Showing live system statistics"); }}
-                  className="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-semibold"
-                >
-                  <Activity className="w-4 h-4" />
-                  <span>System Vault</span>
-                </a>
               </nav>
             </div>
 
@@ -418,7 +391,7 @@ export default function AdminPanel() {
               </div>
             </div>
 
-            {/* Right: Admin Info & Quick Actions */}
+            {/* Right: Admin Info */}
             <div className="flex items-center space-x-3">
               <div className="hidden sm:flex flex-col text-right max-w-[150px] sm:max-w-none">
                 <span className="text-xs font-bold text-white truncate">
@@ -428,14 +401,6 @@ export default function AdminPanel() {
                   ADMINISTRATOR
                 </span>
               </div>
-
-              <button
-                onClick={() => setShowLogoutModal(true)}
-                className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-1.5 rounded-xl text-xs font-semibold border border-slate-700 transition cursor-pointer shrink-0"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span className="hidden xs:inline">Logout</span>
-              </button>
             </div>
 
           </div>
@@ -503,7 +468,6 @@ export default function AdminPanel() {
               </div>
             </div>
 
-            {/* Total System Balance (Rupees ₹) */}
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">TOTAL SYSTEM BALANCE</p>
@@ -612,7 +576,6 @@ export default function AdminPanel() {
                             {u.accountType || "Savings Account"}
                           </td>
 
-                          {/* Balance Column in INR (₹) */}
                           <td className="px-6 py-4 font-extrabold text-slate-900">
                             ₹{Number(u.balance || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
