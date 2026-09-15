@@ -11,7 +11,7 @@ import {
 // @route   POST /api/auth/register
 export const register = async (req, res, next) => {
   try {
-    const { fullName, email, password, role, accountType, dob } = req.body;
+    const { fullName, email, password, role, accountType, dob, isAdmin } = req.body;
 
     if (!fullName || !email || !password) {
       return res.status(400).json({ success: false, message: "All fields are required" });
@@ -24,12 +24,17 @@ export const register = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Email is already registered" });
     }
 
+    // Flexible Case-Insensitive Role Check (handles "admin", "Admin", "ADMIN", or isAdmin: true)
+    const isRegisteringAdmin =
+      (role && role.toString().trim().toLowerCase() === "admin") ||
+      isAdmin === true;
+
     // 1. Create User Document with DOB & Role
     const user = new User({
       fullName,
       email: normalizedEmail,
       password,
-      role: role === "admin" ? "admin" : "user",
+      role: isRegisteringAdmin ? "admin" : "user",
       dob: dob ? new Date(dob) : null,
     });
 

@@ -53,6 +53,7 @@ export default function AdminPanel() {
       setToast({ show: false, message: "", type: "success" });
     }, 3500);
   };
+
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? "/api" : "http://localhost:5000/api");
 
   const fetchAdminData = async () => {
@@ -64,16 +65,22 @@ export default function AdminPanel() {
 
       const normalizedUsers = fetchedUsers.map((u) => {
         const isActiveState = u.isActive !== undefined ? u.isActive : (u.isFrozen !== true);
+
+        // Strictly read role field directly from MongoDB document (case-insensitive & trimmed)
+        const dbRole = u.role
+          ? u.role.toString().trim().toLowerCase()
+          : (u.isAdmin ? "admin" : "user");
+
         return {
           ...u,
           id: u._id || u.id,
-          fullName: u.fullName || (u.email ? u.email.split("@")[0] : "User"),
+          fullName: u.fullName || u.name || (u.email ? u.email.split("@")[0] : "User"),
           email: u.email || "",
           accountNumber: u.account?.accountNumber || u.accountNumber || "N/A",
           accountType: u.account?.accountType || u.accountType || "Savings Account",
           balance: u.account?.balance !== undefined ? u.account.balance : (u.balance || 0),
           isActive: isActiveState,
-          role: u.role || "user",
+          role: dbRole,
         };
       });
 
@@ -94,13 +101,15 @@ export default function AdminPanel() {
       });
     } catch (err) {
       console.error("Admin fetch error:", err);
-      // Auto redirect to login on 401 token expiry, matching Dashboard behavior
-      if (err.response?.status === 401) {
+      // Auto redirect to login on 401/token failure, matching Dashboard behavior
+      const status = err.response?.status;
+      const msg = err.response?.data?.message || "";
+      if (status === 401 || (status === 400 && msg.toLowerCase().includes("token"))) {
         logout();
         navigate("/");
         return;
       }
-      const errMsg = err.response?.data?.message || "Failed to load admin data";
+      const errMsg = msg || "Failed to load admin data";
       setError(errMsg);
       showToast(errMsg, "error");
     } finally {
@@ -152,12 +161,14 @@ export default function AdminPanel() {
       showToast(successMsg, newStatus ? "success" : "warning");
     } catch (err) {
       console.error("Status update error:", err);
-      if (err.response?.status === 401) {
+      const status = err.response?.status;
+      const msg = err.response?.data?.message || "";
+      if (status === 401 || (status === 400 && msg.toLowerCase().includes("token"))) {
         logout();
         navigate("/");
         return;
       }
-      const errMsg = err.response?.data?.message || "Failed to update user status";
+      const errMsg = msg || "Failed to update user status";
       showToast(errMsg, "error");
     } finally {
       setActionLoadingId(null);
@@ -231,7 +242,7 @@ export default function AdminPanel() {
           <div className="flex items-center space-x-4">
             <div className="hidden sm:flex flex-col text-right">
               <span className="text-xs font-semibold text-white">
-                {user?.name || user?.fullName || "System Admin"}
+                {user?.fullName || user?.name || (user?.email ? user.email.split("@")[0] : "System Admin")}
               </span>
               <span className="text-[10px] text-slate-400 uppercase font-semibold">
                 ADMINISTRATOR
@@ -398,7 +409,7 @@ export default function AdminPanel() {
                   paginatedUsers.map((u) => {
                     const userId = u._id || u.id;
                     const isTargetLoading = actionLoadingId === userId;
-                    const isAdminUser = u.role === "admin";
+                    const isAdminUser = u.role === "admin" || u.isAdmin === true;
                     const isUserActive = u.isActive !== false;
 
                     return (
@@ -430,7 +441,7 @@ export default function AdminPanel() {
                                 : "bg-slate-100 text-slate-700 border border-slate-200"
                             }`}
                           >
-                            {u.role || "user"}
+                            {isAdminUser ? "ADMIN" : (u.role || "user").toUpperCase()}
                           </span>
                         </td>
 

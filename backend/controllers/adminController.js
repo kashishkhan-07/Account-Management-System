@@ -12,12 +12,16 @@ export const getAllUsersWithBalances = async (req, res, next) => {
     const usersWithAccounts = await Promise.all(
       users.map(async (user) => {
         const account = await Account.findOne({ userId: user._id });
+
+        // Strict Case Normalization for Role
+        const userRole = user.role ? user.role.toString().trim().toLowerCase() : "user";
+
         return {
           id: user._id,
           _id: user._id,
           fullName: user.fullName || user.name || (user.email ? user.email.split("@")[0] : "User"),
           email: user.email,
-          role: user.role || "user",
+          role: userRole,
           isActive: user.isActive !== undefined ? user.isActive : !user.isFrozen,
           createdAt: user.createdAt,
           account: account
@@ -69,7 +73,7 @@ export const updateUserStatus = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Cannot deactivate an admin user" });
     }
 
-    // Atomic Update (Bypasses whole-document validation errors)
+    // Atomic Update
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {

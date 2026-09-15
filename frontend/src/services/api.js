@@ -55,7 +55,7 @@ api.interceptors.response.use(
       !originalRequest.url?.includes("/auth/refresh-token")
     ) {
       if (isRefreshing) {
-        // If refresh is already in progress, queue this request
+        // Queue pending requests while refresh is in progress
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
@@ -74,24 +74,43 @@ api.interceptors.response.use(
         localStorage.getItem("refresh_token") ||
         localStorage.getItem("token");
 
+      // If no refresh token exists, redirect to login cleanly instead of showing error banner
+      if (!refreshToken) {
+        isRefreshing = false;
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user");
+        if (window.location.pathname !== "/") {
+          window.location.href = "/";
+        }
+        return Promise.reject(error);
+      }
+
       try {
         console.log("🔄 [Auth] Access Token Expired. Calling /auth/refresh-token...");
         const res = await axios.post(
           `${API_BASE_URL}/auth/refresh-token`,
-          refreshToken ? { refreshToken, token: refreshToken } : {},
+          { refreshToken, token: refreshToken },
           { withCredentials: true }
         );
 
         const newAccessToken =
+          res.data.tokens?.accessToken ||
           res.data.accessToken ||
           res.data.token ||
-          res.data.data?.accessToken ||
-          res.data.data?.token;
+          res.data.data?.accessToken;
+
+        const newRefreshToken =
+          res.data.tokens?.refreshToken ||
+          res.data.refreshToken ||
+          res.data.refresh_token;
 
         if (newAccessToken) {
           console.log("✅ [Auth] Token Refreshed Successfully!");
           localStorage.setItem("accessToken", newAccessToken);
-          localStorage.setItem("token", newAccessToken);
+          if (newRefreshToken) {
+            localStorage.setItem("refreshToken", newRefreshToken);
+          }
 
           api.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
@@ -106,12 +125,12 @@ api.interceptors.response.use(
         processQueue(refreshErr, null);
         isRefreshing = false;
 
-        if (refreshErr.response?.status === 401 || refreshErr.response?.status === 403) {
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("token");
-          localStorage.removeItem("refreshToken");
-          localStorage.removeItem("refresh_token");
-          localStorage.removeItem("shopsphere_token");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+
+        if (window.location.pathname !== "/") {
           window.location.href = "/";
         }
         return Promise.reject(refreshErr);
