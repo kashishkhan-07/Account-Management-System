@@ -239,18 +239,19 @@ export default function AdminPanel() {
             </div>
           </div>
 
-          <div className="flex items-center space-x-4">
-            <div className="hidden sm:flex flex-col text-right">
-              <span className="text-xs font-semibold text-white">
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            {/* Mobile & Desktop Admin User Info Display */}
+            <div className="flex flex-col text-right max-w-[120px] sm:max-w-none">
+              <span className="text-xs font-semibold text-white truncate">
                 {user?.fullName || user?.name || (user?.email ? user.email.split("@")[0] : "System Admin")}
               </span>
-              <span className="text-[10px] text-slate-400 uppercase font-semibold">
+              <span className="text-[9px] sm:text-[10px] text-slate-400 uppercase font-semibold tracking-wider">
                 ADMINISTRATOR
               </span>
             </div>
             <button
               onClick={() => setShowLogoutModal(true)}
-              className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 transition cursor-pointer"
+              className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 transition cursor-pointer shrink-0"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Logout</span>
