@@ -24,17 +24,24 @@ export const register = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Email is already registered" });
     }
 
-    // Flexible Case-Insensitive Role Check (handles "admin", "Admin", "ADMIN", or isAdmin: true)
+    // 🚫 Block Admin Registration Attempt (Admin must log in directly)
     const isRegisteringAdmin =
       (role && role.toString().trim().toLowerCase() === "admin") ||
       isAdmin === true;
 
-    // 1. Create User Document with DOB & Role
+    if (isRegisteringAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Admin registration is prohibited. Admin must log in directly.",
+      });
+    }
+
+    // 1. Create User Document with DOB & Role (Strictly "user")
     const user = new User({
       fullName,
       email: normalizedEmail,
       password,
-      role: isRegisteringAdmin ? "admin" : "user",
+      role: "user",
       dob: dob ? new Date(dob) : null,
     });
 
