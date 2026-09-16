@@ -483,6 +483,26 @@ export default function Dashboard() {
     year: "numeric",
   });
 
+  // Account Created On Formatter (Date, Day, Time)
+  const accountCreatedOnStr = (() => {
+    const dateRaw =
+      accountData?.createdAt ||
+      accountData?.created_at ||
+      accountData?.timestamp ||
+      user?.createdAt ||
+      user?.created_at ||
+      user?.timestamp;
+
+    const validDate = dateRaw ? new Date(dateRaw) : new Date();
+    const finalDate = !isNaN(validDate.getTime()) ? validDate : new Date();
+
+    const dayName = finalDate.toLocaleDateString("en-US", { weekday: "short" });
+    const dateStr = finalDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    const timeStr = finalDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+
+    return `${dayName}, ${dateStr} at ${timeStr}`;
+  })();
+
   const userName = user?.fullName || user?.name || "Vani Verma";
   const userInitial = userName.charAt(0).toUpperCase();
 
@@ -936,6 +956,11 @@ export default function Dashboard() {
                   <div className={`p-4 rounded-2xl border space-y-1 ${isDarkMode ? "bg-slate-800/60 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">CARD HOLDER NAME</span>
                     <div className={`font-extrabold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>{userName}</div>
+                  </div>
+
+                  <div className={`p-4 rounded-2xl border space-y-1 sm:col-span-2 lg:col-span-1 ${isDarkMode ? "bg-slate-800/60 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ACCOUNT CREATED ON</span>
+                    <div className={`font-extrabold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>{accountCreatedOnStr}</div>
                   </div>
                 </div>
               </div>
