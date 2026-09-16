@@ -224,49 +224,252 @@ export default function Dashboard() {
   const inflowPercent = rawInflow > 0 ? (rawInflow % 1 === 0 ? rawInflow.toFixed(0) : rawInflow.toFixed(2)) : 0;
   const outflowPercent = rawOutflow > 0 ? (rawOutflow % 1 === 0 ? rawOutflow.toFixed(0) : rawOutflow.toFixed(2)) : 0;
 
-  // Smart Transaction Description Formatting (Name + Account Number for both Sender & Receiver Views)
+  // Dynamic Account Number -> Account Holder Name Lookup Map built from transaction history
+  const accountNameMap = {};
+  transactions.forEach((tr) => {
+    // Check receiver
+    const rAcc = tr.receiverAccount || tr.receiverAccountNumber || tr.toAccount || tr.receiver?.accountNumber;
+    let rName = tr.receiverName || tr.recipientName || tr.toUserName || tr.receiverHolderName || tr.receiverAccountHolder || tr.receiverDetails?.fullName || tr.receiverDetails?.name || tr.receiver?.fullName || tr.receiver?.name;
+    if (!rName && tr.description && typeof tr.description === "string") {
+      const m = tr.description.match(/^(?:Transfer to|Sent to|To)\s+([^(]+)/i);
+      if (m && m[1] && !m[1].toLowerCase().startsWith("acc") && m[1].toLowerCase() !== "account") {
+        rName = m[1].trim();
+      }
+    }
+    if (rAcc && rName && !rName.toLowerCase().startsWith("acc") && rName.toLowerCase() !== "account") {
+      accountNameMap[rAcc.toString().trim()] = rName.trim();
+    }
+
+    // Check sender
+    const sAcc = tr.senderAccount || tr.senderAccountNumber || tr.fromAccount || tr.sender?.accountNumber;
+    let sName = tr.senderName || tr.sender_name || tr.senderHolderName || tr.senderAccountHolder || tr.fromUserName || tr.senderDetails?.fullName || tr.senderDetails?.name || tr.sender?.fullName || tr.sender?.name;
+    if (!sName && tr.description && typeof tr.description === "string") {
+      const m = tr.description.match(/^(?:Received from|Transfer from|From)\s+([^(]+)/i);
+      if (m && m[1] && !m[1].toLowerCase().startsWith("acc") && m[1].toLowerCase() !== "account") {
+        sName = m[1].trim();
+      }
+    }
+    if (sAcc && sName && !sName.toLowerCase().startsWith("acc") && sName.toLowerCase() !== "account") {
+      accountNameMap[sAcc.toString().trim()] = sName.trim();
+    }
+  });
+
+  // Smart Transaction Description Formatting (Extracts Sender & Receiver Details)
   const getTransactionDescription = (t) => {
     if (t.type === "transfer") {
       const isReceiver =
         t.receiverAccount === accountNo ||
-        (t.receiverAccount && accountNo && t.receiverAccount.toString() === accountNo.toString());
+        t.receiverAccountNumber === accountNo ||
+        t.toAccount === accountNo ||
+        (t.receiverAccount && accountNo && t.receiverAccount.toString() === accountNo.toString()) ||
+        (t.receiverAccountNumber && accountNo && t.receiverAccountNumber.toString() === accountNo.toString());
 
-      const senderName =
+      // --- 1. Extract Sender Name & Account ---
+      let senderName =
         t.senderName ||
+        t.sender_name ||
+        t.senderHolderName ||
+        t.senderAccountHolder ||
+        t.senderAccountHolderName ||
+        t.sender_account_holder ||
+        t.fromUserName ||
+        t.from_user_name ||
+        t.fromName ||
+        t.senderDetails?.fullName ||
+        t.senderDetails?.name ||
+        t.senderDetails?.accountHolder ||
         t.sender?.fullName ||
         t.sender?.name ||
+        t.sender?.userName ||
+        t.sender?.username ||
+        t.sender?.accountHolder ||
+        t.sender?.accountHolderName ||
         t.senderId?.fullName ||
-        t.senderId?.name;
+        t.senderId?.name ||
+        t.senderId?.userName ||
+        t.senderId?.accountHolder ||
+        t.fromUser?.fullName ||
+        t.fromUser?.name ||
+        t.fromUser?.accountHolder ||
+        t.user?.fullName ||
+        t.user?.name ||
+        t.accountHolder ||
+        t.accountHolderName ||
+        t.holderName;
 
-      const senderAcc = t.senderAccount || t.senderAccountNumber || t.senderAccountNo;
+      if (!senderName && t.sender) {
+        if (typeof t.sender === "string" && !t.sender.match(/^[0-9a-fA-F]{24}$/) && !t.sender.toLowerCase().startsWith("acc")) {
+          senderName = t.sender;
+        } else if (typeof t.sender === "object") {
+          senderName = t.sender.fullName || t.sender.name || t.sender.userName || t.sender.accountHolder;
+        }
+      }
 
-      const receiverName =
+      if (!senderName && t.senderId) {
+        if (typeof t.senderId === "string" && !t.senderId.match(/^[0-9a-fA-F]{24}$/) && !t.senderId.toLowerCase().startsWith("acc")) {
+          senderName = t.senderId;
+        } else if (typeof t.senderId === "object") {
+          senderName = t.senderId.fullName || t.senderId.name || t.senderId.userName;
+        }
+      }
+
+      if (!senderName && t.fromUser) {
+        if (typeof t.fromUser === "string" && !t.fromUser.match(/^[0-9a-fA-F]{24}$/) && !t.fromUser.toLowerCase().startsWith("acc")) {
+          senderName = t.fromUser;
+        } else if (typeof t.fromUser === "object") {
+          senderName = t.fromUser.fullName || t.fromUser.name;
+        }
+      }
+
+      let senderAcc =
+        t.senderAccount ||
+        t.senderAccountNumber ||
+        t.senderAccountNo ||
+        t.sender_account ||
+        t.sender_account_number ||
+        t.sender?.accountNumber ||
+        t.sender?.account_number ||
+        t.sender?.accountNo ||
+        t.senderId?.accountNumber ||
+        t.fromAccount ||
+        t.fromAccountNumber ||
+        t.fromAccountNo ||
+        t.from_account ||
+        t.sourceAccount ||
+        t.sourceAccountNumber;
+
+      // --- 2. Extract Receiver Name & Account ---
+      let receiverName =
         t.receiverName ||
+        t.receiver_name ||
+        t.recipientName ||
+        t.recipient_name ||
+        t.receiverHolderName ||
+        t.receiverAccountHolder ||
+        t.receiverAccountHolderName ||
+        t.toUserName ||
+        t.to_user_name ||
+        t.toName ||
+        t.receiverDetails?.fullName ||
+        t.receiverDetails?.name ||
+        t.receiverDetails?.accountHolder ||
         t.receiver?.fullName ||
         t.receiver?.name ||
+        t.receiver?.userName ||
+        t.receiver?.accountHolder ||
         t.receiverId?.fullName ||
         t.receiverId?.name ||
-        t.recipientName ||
+        t.receiverId?.accountHolder ||
         t.recipient?.fullName ||
-        t.recipient?.name;
+        t.recipient?.name ||
+        t.recipient?.accountHolder;
 
-      const receiverAcc = t.receiverAccount || t.receiverAccountNumber || t.receiverAccountNo;
+      if (!receiverName && t.receiver) {
+        if (typeof t.receiver === "string" && !t.receiver.match(/^[0-9a-fA-F]{24}$/) && !t.receiver.toLowerCase().startsWith("acc")) {
+          receiverName = t.receiver;
+        } else if (typeof t.receiver === "object") {
+          receiverName = t.receiver.fullName || t.receiver.name || t.receiver.userName || t.receiver.accountHolder;
+        }
+      }
+
+      if (!receiverName && t.receiverId) {
+        if (typeof t.receiverId === "string" && !t.receiverId.match(/^[0-9a-fA-F]{24}$/) && !t.receiverId.toLowerCase().startsWith("acc")) {
+          receiverName = t.receiverId;
+        } else if (typeof t.receiverId === "object") {
+          receiverName = t.receiverId.fullName || t.receiverId.name || t.receiverId.userName;
+        }
+      }
+
+      if (!receiverName && t.recipient) {
+        if (typeof t.recipient === "string" && !t.recipient.match(/^[0-9a-fA-F]{24}$/) && !t.recipient.toLowerCase().startsWith("acc")) {
+          receiverName = t.recipient;
+        } else if (typeof t.recipient === "object") {
+          receiverName = t.recipient.fullName || t.recipient.name || t.recipient.userName;
+        }
+      }
+
+      let receiverAcc =
+        t.receiverAccount ||
+        t.receiverAccountNumber ||
+        t.receiverAccountNo ||
+        t.receiver_account ||
+        t.receiver_account_number ||
+        t.receiver?.accountNumber ||
+        t.receiver?.account_number ||
+        t.receiverId?.accountNumber ||
+        t.recipientAccount ||
+        t.recipientAccountNumber ||
+        t.recipient_account ||
+        t.toAccount ||
+        t.toAccountNumber ||
+        t.to_account ||
+        t.targetAccount ||
+        t.targetAccountNumber;
+
+      // --- 3. Smart Regex Extraction from description if fields are missing ---
+      if (t.description && typeof t.description === "string") {
+        // Match "Transfer to Name (AccNo)"
+        const toMatch = t.description.match(/^(?:Transfer to|Sent to|To)\s+([^(]+)(?:\s*\(([^)]+)\))?/i);
+        if (toMatch) {
+          const matchedName = toMatch[1].trim();
+          if (!receiverName && matchedName && !matchedName.toLowerCase().startsWith("acc") && matchedName.toLowerCase() !== "account") {
+            receiverName = matchedName;
+          }
+          if (!receiverAcc && toMatch[2]) receiverAcc = toMatch[2].trim();
+        }
+
+        // Match "Received from Name (AccNo)" or "Transfer from Name (AccNo)"
+        const fromMatch = t.description.match(/^(?:Received from|Transfer from|From)\s+([^(]+)(?:\s*\(([^)]+)\))?/i);
+        if (fromMatch) {
+          const matchedName = fromMatch[1].trim();
+          if (!senderName && matchedName && !matchedName.toLowerCase().startsWith("acc") && matchedName.toLowerCase() !== "account") {
+            senderName = matchedName;
+          }
+          if (!senderAcc && fromMatch[2]) senderAcc = fromMatch[2].trim();
+        }
+      }
+
+      // --- 4. Dynamic Account Name Map Lookup ---
+      const sAccStr = senderAcc ? senderAcc.toString().trim() : "";
+      if (!senderName && sAccStr && accountNameMap[sAccStr]) {
+        senderName = accountNameMap[sAccStr];
+      }
+
+      const rAccStr = receiverAcc ? receiverAcc.toString().trim() : "";
+      if (!receiverName && rAccStr && accountNameMap[rAccStr]) {
+        receiverName = accountNameMap[rAccStr];
+      }
+
+      // Format names cleanly
+      const displaySenderName = senderName && senderName.trim().toLowerCase() !== "account" && !senderName.trim().toLowerCase().startsWith("acc") ? senderName.trim() : null;
+      const displaySenderAcc = sAccStr;
+
+      const displayReceiverName = receiverName && receiverName.trim().toLowerCase() !== "account" && !receiverName.trim().toLowerCase().startsWith("acc") ? receiverName.trim() : null;
+      const displayReceiverAcc = rAccStr;
 
       if (isReceiver) {
-        if (senderName && senderAcc) return `Received from ${senderName} (${senderAcc})`;
-        if (senderName) return `Received from ${senderName}`;
-        if (t.description && !t.description.toLowerCase().includes("transfer to acc ")) {
-          return t.description.replace(/^Transfer to\s+/i, "Received from ");
+        // RECEIVER VIEW: Show SENDER'S Account Holder Name & Account Number
+        if (displaySenderName && displaySenderAcc) {
+          return `Received from ${displaySenderName} (${displaySenderAcc})`;
         }
-        if (senderAcc) return `Received from Acc (${senderAcc})`;
-        return t.description?.replace(/^Transfer to\s+/i, "Received from ") || "Received Money Transfer";
+        if (displaySenderName) {
+          return `Received from ${displaySenderName}`;
+        }
+        if (displaySenderAcc) {
+          return `Received from (${displaySenderAcc})`;
+        }
+        return "Received Money Transfer";
       } else {
-        if (receiverName && receiverAcc) return `Transfer to ${receiverName} (${receiverAcc})`;
-        if (receiverName) return `Transfer to ${receiverName}`;
-        if (t.description && !t.description.toLowerCase().includes("transfer to acc ")) {
-          return t.description;
+        // SENDER VIEW: Show RECEIVER'S Account Holder Name & Account Number
+        if (displayReceiverName && displayReceiverAcc) {
+          return `Transfer to ${displayReceiverName} (${displayReceiverAcc})`;
         }
-        if (receiverAcc) return `Transfer to Acc (${receiverAcc})`;
+        if (displayReceiverName) {
+          return `Transfer to ${displayReceiverName}`;
+        }
+        if (displayReceiverAcc) {
+          return `Transfer to (${displayReceiverAcc})`;
+        }
         return t.description || "Transfer to Recipient";
       }
     }
@@ -1068,7 +1271,7 @@ export default function Dashboard() {
               <h3 className={`text-base font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                 Confirm Logout
               </h3>
-              <p className="text-xs text-slate-400 mt-1 font-medium">
+              <p className="text-xs text-slate-400 font-medium">
                 Are you sure you want to log out of your account?
               </p>
             </div>
